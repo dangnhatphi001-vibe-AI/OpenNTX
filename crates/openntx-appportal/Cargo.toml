@@ -1,0 +1,12 @@
+[package]
+name = "openntx-appportal"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Lightweight AppPortal mock frontend for the OpenNTX source-available V0.1 foundation."
+license-file = "../../LICENSE"
+
+[dependencies]
+openntx-core = { path = "../openntx-core" }

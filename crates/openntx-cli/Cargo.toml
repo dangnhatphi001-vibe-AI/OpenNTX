@@ -1,0 +1,17 @@
+[package]
+name = "openntx-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Command-line interface for the OpenNTX source-available Windows application subsystem foundation."
+license-file = "../../LICENSE"
+
+[[bin]]
+name = "openntx"
+path = "src/main.rs"
+
+[dependencies]
+clap = { workspace = true }
+openntx-core = { path = "../openntx-core" }

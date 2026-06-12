@@ -1,0 +1,31 @@
+{
+  "schema_version": "0.1.0",
+  "capture_id": "capture-example-app",
+  "input_installer": "setup.exe",
+  "started_at": "placeholder",
+  "finished_at": "placeholder",
+  "installer_exit_code": 0,
+  "files_created": [
+    "C:/Program Files/Example/App.exe"
+  ],
+  "files_modified": [],
+  "registry_keys_created": [
+    "HKCU/Software/Example"
+  ],
+  "registry_values_changed": [],
+  "shortcuts_detected": [
+    {
+      "name": "Example App",
+      "target": "C:/Program Files/Example/App.exe"
+    }
+  ],
+  "executable_candidates": [
+    {
+      "path": "C:/Program Files/Example/App.exe",
+      "score": 0.95,
+      "reason": "Detected from installer shortcut"
+    }
+  ],
+  "warnings": [],
+  "errors": []
+}

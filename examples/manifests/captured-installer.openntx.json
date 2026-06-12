@@ -1,0 +1,64 @@
+{
+  "schema_version": "0.1.0",
+  "app_id": "example-app",
+  "name": "Example Windows App",
+  "version": "1.0.0",
+  "source": {
+    "type": "installer",
+    "original_file": "setup.exe",
+    "sha256": "placeholder"
+  },
+  "executable": {
+    "path": "C:/Program Files/Example/App.exe",
+    "arguments": [],
+    "working_directory": "C:/Program Files/Example"
+  },
+  "architecture": "x86_64",
+  "install_mode": "captured",
+  "windows_compatibility": {
+    "version": "windows10",
+    "dpi_mode": "per-monitor-v2"
+  },
+  "filesystem": {
+    "drive_c": "drive_c",
+    "home_mapping": "limited",
+    "documents_access": "ask",
+    "downloads_access": "ask"
+  },
+  "registry": {
+    "mode": "overlay",
+    "user_hive": "registry/user.json",
+    "machine_hive": "registry/machine.json"
+  },
+  "sandbox": {
+    "profile": "standard",
+    "network": "ask",
+    "home": "deny",
+    "documents": "ask",
+    "downloads": "ask",
+    "removable_drives": "deny"
+  },
+  "graphics": {
+    "preferred_backend": "auto",
+    "d3d_translation": "future",
+    "wayland": true,
+    "x11": true
+  },
+  "audio": {
+    "backend": "pipewire"
+  },
+  "desktop": {
+    "create_launcher": true,
+    "name": "Example Windows App",
+    "icon": "example-app",
+    "categories": ["Utility"]
+  },
+  "packaging": {
+    "deb_package": true,
+    "package_name": "openntx-example-app"
+  },
+  "diagnostics": {
+    "log_level": "info",
+    "crash_reports": true
+  }
+}

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Example Windows App
+Comment=Windows application managed by OpenNTX
+Exec=openntx run example-app
+Icon=example-app
+Categories=Utility;
+StartupNotify=true
+NoDisplay=false

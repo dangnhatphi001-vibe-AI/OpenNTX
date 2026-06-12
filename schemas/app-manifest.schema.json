@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openntx.dev/schemas/app-manifest.schema.json",
+  "title": "OpenNTX App Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "app_id",
+    "name",
+    "source",
+    "executable",
+    "architecture",
+    "install_mode",
+    "windows_compatibility",
+    "filesystem",
+    "registry",
+    "sandbox",
+    "graphics",
+    "audio",
+    "desktop",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "0.1.0" },
+    "app_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$"
+    },
+    "name": { "type": "string", "minLength": 1 },
+    "version": { "type": "string" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "original_file"],
+      "properties": {
+        "type": { "type": "string", "enum": ["installer", "portable", "unknown"] },
+        "original_file": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "minLength": 1 }
+      }
+    },
+    "executable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "arguments", "working_directory"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "arguments": { "type": "array", "items": { "type": "string" } },
+        "working_directory": { "type": "string" }
+      }
+    },
+    "architecture": { "type": "string", "enum": ["x86", "x86_64", "arm64", "unknown"] },
+    "install_mode": { "type": "string", "enum": ["portable", "captured", "planned", "run-once"] },
+    "windows_compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "dpi_mode"],
+      "properties": {
+        "version": { "type": "string", "enum": ["windows7", "windows8", "windows10", "windows11", "auto"] },
+        "dpi_mode": { "type": "string", "enum": ["system", "per-monitor", "per-monitor-v2", "unaware", "auto"] }
+      }
+    },
+    "filesystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["drive_c", "home_mapping", "documents_access", "downloads_access"],
+      "properties": {
+        "drive_c": { "type": "string", "minLength": 1 },
+        "home_mapping": { "type": "string", "enum": ["deny", "limited", "ask", "mapped"] },
+        "documents_access": { "type": "string", "enum": ["deny", "ask", "allow"] },
+        "downloads_access": { "type": "string", "enum": ["deny", "ask", "allow"] }
+      }
+    },
+    "registry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "user_hive", "machine_hive"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["overlay", "readonly", "future"] },
+        "user_hive": { "type": "string", "minLength": 1 },
+        "machine_hive": { "type": "string", "minLength": 1 }
+      }
+    },
+    "sandbox": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "network", "home", "documents", "downloads", "removable_drives"],
+      "properties": {
+        "profile": { "type": "string", "enum": ["strict", "standard", "developer"] },
+        "network": { "type": "string", "enum": ["deny", "ask", "allow"] },
+        "home": { "type": "string", "enum": ["deny", "ask", "allow"] },
+        "documents": { "type": "string", "enum": ["deny", "ask", "allow"] },
+        "downloads": { "type": "string", "enum": ["deny", "ask", "allow"] },
+        "removable_drives": { "type": "string", "enum": ["deny", "ask", "allow"] }
+      }
+    },
+    "graphics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preferred_backend", "d3d_translation", "wayland", "x11"],
+      "properties": {
+        "preferred_backend": { "type": "string", "enum": ["auto", "wayland", "x11", "vulkan", "software"] },
+        "d3d_translation": { "type": "string", "enum": ["future", "disabled", "external"] },
+        "wayland": { "type": "boolean" },
+        "x11": { "type": "boolean" }
+      }
+    },
+    "audio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["backend"],
+      "properties": {
+        "backend": { "type": "string", "enum": ["pipewire", "pulseaudio", "alsa", "auto"] }
+      }
+    },
+    "desktop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["create_launcher", "name", "icon", "categories"],
+      "properties": {
+        "create_launcher": { "type": "boolean" },
+        "name": { "type": "string", "minLength": 1 },
+        "icon": { "type": "string", "minLength": 1 },
+        "categories": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "packaging": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "deb_package": { "type": "boolean" },
+        "package_name": { "type": "string" }
+      }
+    },
+    "diagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["log_level", "crash_reports"],
+      "properties": {
+        "log_level": { "type": "string", "enum": ["error", "warn", "info", "debug", "trace"] },
+        "crash_reports": { "type": "boolean" }
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+/target/
+**/*.rs.bk
+*.log
+*.tmp
+*.swp
+*.swo
+.DS_Store
+.idea/
+.vscode/
+/.cache/
+/.local-openntx/
+/dist/
+/packages/
+*.deb
+*.rpm
+*.AppImage

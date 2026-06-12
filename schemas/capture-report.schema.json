@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openntx.dev/schemas/capture-report.schema.json",
+  "title": "OpenNTX Capture Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "capture_id",
+    "input_installer",
+    "started_at",
+    "finished_at",
+    "installer_exit_code",
+    "files_created",
+    "files_modified",
+    "registry_keys_created",
+    "registry_values_changed",
+    "shortcuts_detected",
+    "executable_candidates",
+    "warnings",
+    "errors"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "0.1.0" },
+    "capture_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,126}[a-z0-9]$"
+    },
+    "input_installer": { "type": "string", "minLength": 1 },
+    "started_at": { "type": "string", "minLength": 1 },
+    "finished_at": { "type": "string", "minLength": 1 },
+    "installer_exit_code": { "type": "integer" },
+    "files_created": { "type": "array", "items": { "type": "string" } },
+    "files_modified": { "type": "array", "items": { "type": "string" } },
+    "registry_keys_created": { "type": "array", "items": { "type": "string" } },
+    "registry_values_changed": { "type": "array", "items": { "type": "string" } },
+    "shortcuts_detected": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "target"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "target": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "executable_candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "score", "reason"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "score": { "type": "number", "minimum": 0, "maximum": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "string" } }
+  }
+}

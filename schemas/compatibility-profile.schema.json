@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openntx.dev/schemas/compatibility-profile.schema.json",
+  "title": "OpenNTX Compatibility Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "app_name",
+    "known_hashes",
+    "status",
+    "recommended_windows_version",
+    "required_modules",
+    "dll_overrides",
+    "graphics_policy",
+    "sandbox_policy",
+    "known_issues",
+    "notes"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "0.1.0" },
+    "app_name": { "type": "string", "minLength": 1 },
+    "known_hashes": { "type": "array", "items": { "type": "string" } },
+    "status": {
+      "type": "string",
+      "enum": ["unknown", "broken", "boots", "usable", "silver", "gold", "native-feeling"]
+    },
+    "recommended_windows_version": {
+      "type": "string",
+      "enum": ["windows7", "windows8", "windows10", "windows11", "auto"]
+    },
+    "required_modules": { "type": "array", "items": { "type": "string" } },
+    "dll_overrides": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "graphics_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preferred_backend": { "type": "string" },
+        "d3d_translation": { "type": "string" }
+      }
+    },
+    "sandbox_policy": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "known_issues": { "type": "array", "items": { "type": "string" } },
+    "notes": { "type": "string" }
+  }
+}

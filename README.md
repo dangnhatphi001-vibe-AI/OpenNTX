@@ -1,9 +1,19 @@
 # OpenNTX
 
-[![CI](https://github.com/openntx/openntx/actions/workflows/ci.yml/badge.svg)](https://github.com/openntx/openntx/actions/workflows/ci.yml)
-![Status](https://img.shields.io/badge/status-experimental-orange)
-![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)
-![Runtime](https://img.shields.io/badge/runtime-not%20implemented%20in%20V0.9-lightgrey)
+<p align="center">
+  <img src="screenshots/banner.png" alt="OpenNTX Banner" width="850">
+</p>
+
+<p align="center">
+  <img src="screenshots/app_icon.png" alt="OpenNTX App Icon" width="128">
+</p>
+
+<p align="center">
+  <a href="https://github.com/openntx/openntx/actions/workflows/ci.yml"><img src="https://github.com/openntx/openntx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/status-experimental-orange" alt="Status">
+  <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="License">
+  <img src="https://img.shields.io/badge/runtime-not%20implemented%20in%20V0.9-lightgrey" alt="Runtime">
+</p>
 
 **Drop EXE. Run Native.**
 
@@ -69,6 +79,10 @@ It does not run arbitrary Windows software. Runtime execution, installer capture
 
 ## Architecture Overview
 
+<p align="center">
+  <img src="screenshots/architecture.png" alt="OpenNTX Architecture Overview" width="850">
+</p>
+
 ```text
 Windows PE/EXE
     |
@@ -97,6 +111,10 @@ The CLI and AppPortal call the core. Runtime logic must not live in the GUI.
 ## AppPortal Concept
 
 AppPortal is the user-facing install surface. V0.9 ships as a lightweight terminal UI that reads the real OpenNTX app registry and manages analysis-only registry actions without heavy GUI dependencies.
+
+<p align="center">
+  <img src="screenshots/appportal_mockup.png" alt="OpenNTX AppPortal Terminal Mockup" width="850">
+</p>
 
 Current AppPortal surfaces:
 

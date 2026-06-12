@@ -1,5 +1,10 @@
 # OpenNTX
 
+[![CI](https://github.com/openntx/openntx/actions/workflows/ci.yml/badge.svg)](https://github.com/openntx/openntx/actions/workflows/ci.yml)
+![Status](https://img.shields.io/badge/status-experimental-orange)
+![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)
+![Runtime](https://img.shields.io/badge/runtime-not%20implemented%20in%20V0.1-lightgrey)
+
 **Drop EXE. Run Native.**
 
 OpenNTX is an experimental Windows application subsystem for Linux. It aims to make Windows PE/EXE applications feel like native Linux desktop apps by combining PE detection, app manifests, installer capture, sandboxing, desktop integration, and a future NT/Win32 compatibility runtime.
@@ -133,6 +138,29 @@ Optional schema validation:
 python3 -m pip install --user jsonschema
 tools/dev-check.sh
 ```
+
+## How to Test V0.1
+
+Run the required local checks:
+
+```bash
+cargo fmt --all -- --check
+cargo build --workspace
+cargo test --workspace
+tools/dev-check.sh
+```
+
+Run CLI and AppPortal smoke checks:
+
+```bash
+cargo run -p openntx-cli -- package example-app
+tools/mock-install-flow.sh
+cargo run -p openntx-appportal
+```
+
+The mock install flow creates a temporary minimal PE fixture and demonstrates analysis/install planning only. OpenNTX V0.1 does not execute Windows binaries or installers.
+
+See [docs/testing.md](docs/testing.md) for the full test guide and V0.1 test boundaries.
 
 ## Roadmap Summary
 

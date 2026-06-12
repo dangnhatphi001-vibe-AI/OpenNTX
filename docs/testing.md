@@ -77,6 +77,20 @@ cargo run -p openntx-cli -- remove <app-id> --dry-run
 cargo run -p openntx-cli -- remove <app-id> --yes
 ```
 
+Install the CLI binary to `~/.cargo/bin/`:
+
+```bash
+cargo install --path crates/openntx-cli
+```
+
+After installing, verify the global `openntx` binary accepts all run flags:
+
+```bash
+openntx run <app-id> --json
+openntx run <app-id> --notify
+openntx run <app-id> --no-log
+```
+
 `openntx install app.exe` remains dry-run unless `--write-plan` is passed.
 
 Run-plan logs are written by default under:
@@ -125,6 +139,22 @@ gtk-launch openntx-<app-id>
 ```
 
 `gtk-launch` should only reach `openntx run <app-id> --notify`, which remains a dry-run runtime placeholder and writes diagnostics.
+
+## Install-Mode Heuristic Consistency
+
+The install-mode heuristic is unified across `analyze`, `manifest generate`, and `install --write-plan`. Verify consistency with:
+
+```bash
+openntx analyze ~/Downloads/cpu-z_2.20.2-en.exe
+openntx manifest generate ~/Downloads/cpu-z_2.20.2-en.exe
+```
+
+Both should report `run-once`/`portable` for CPU-Z (a non-installer GUI tool). Installer-looking filenames (containing `install`, `setup`, `wizard`, `bootstrapper`) should report `capture-install`/`captured` consistently.
+
+Automated tests cover this in `manifest_generator_tests.rs`:
+
+- `cpu_z_like_gui_filename_is_consistent_run_once`
+- `installer_filename_is_consistent_captured_across_analyze_and_manifest`
 
 ## What V0.7 Tests Do Not Cover
 

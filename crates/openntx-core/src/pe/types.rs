@@ -91,6 +91,7 @@ pub struct PeAnalysis {
     pub sections: Vec<PeSection>,
     pub imported_dlls: Vec<String>,
     pub suggested_mode: String,
+    pub install_mode_reason: String,
     pub status: String,
     pub warnings: Vec<String>,
 }

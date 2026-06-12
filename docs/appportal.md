@@ -65,6 +65,8 @@ Run plan remains honest: runtime execution is not implemented in V0.7. AppPortal
 ~/.local/state/openntx/logs/
 ```
 
+The run-plan screen displays real app metadata including target, app ID, name, executable path, architecture, install mode, sandbox profile, imported DLL count, desktop status, backend, status, and a UTC timestamp. It explicitly states that the app is registered but runtime execution is not implemented.
+
 ## Analyze EXE
 
 The Analyze EXE flow asks for a file path, runs the OpenNTX PE analyzer, and shows:

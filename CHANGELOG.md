@@ -4,8 +4,12 @@ All notable changes to OpenNTX will be documented in this file.
 
 ## Unreleased
 
-- Add V0.7 run-plan UX and diagnostics with registered manifest loading, human and JSON output, default run-plan log writing, optional `--notify`, AppPortal run-plan reuse, and desktop launcher `--notify` Exec.
-- Add V0.6 registry-backed AppPortal TUI with real app library, app details, PE analysis, install-plan writing, desktop launcher actions, dry-run run plan, and confirmed app removal.
+- Fix V0.7 run-plan CLI: resolve stale binary issue where `--json`, `--notify`, `--no-log` flags were not recognized by the installed `openntx` binary.
+- Unify install-mode heuristic across `analyze`, `manifest generate`, and `install --write-plan` so non-installer GUI tools (like CPU-Z) consistently get `run-once`/`portable` instead of the previous inconsistent `captured`.
+- Add `target` and `timestamp` fields to run-plan reports.
+- Add `install_mode_reason` to PE analysis output and CLI `analyze` display.
+- Add tests for heuristic consistency, run-plan JSON round-trip, no-log behavior, desktop Exec `--notify`, notify-send safety, and V0.7 status messaging.
+- Update AppPortal run-plan screen with real app name, target, and timestamp.
 - Add V0.5 desktop launcher writer with `openntx desktop create/remove`, `install --write-plan --desktop`, launcher status in list/show, and desktop create/remove tests.
 - Add V0.4 app registry and install plan writer with `openntx install --write-plan`, `openntx list`, `openntx show`, and confirmed/dry-run remove behavior.
 - Add V0.3 manifest generation from PE analysis, including `openntx manifest generate`, JSON output, output-file writing, install dry-run manifest planning, generated manifest diagnostics metadata, and a generated-from-PE example.
@@ -21,8 +25,12 @@ All notable changes to OpenNTX will be documented in this file.
 - Write JSON diagnostics logs under `~/.local/state/openntx/logs/`.
 - Add `openntx run <app-id> --json`.
 - Add optional `openntx run <app-id> --notify` using `notify-send` when available.
+- Add `openntx run <app-id> --no-log` to suppress diagnostics log.
 - Update desktop launchers to call `openntx run <app-id> --notify`.
 - Reuse the same run-plan logic in AppPortal.
+- Unify install-mode heuristic across analyze, manifest generate, and install flows.
+- Add `target`, `timestamp`, and `install_mode_reason` fields to run-plan and analysis output.
+- Require `cargo install --path crates/openntx-cli` to update the installed binary.
 
 ## 0.6.0 - AppPortal Registry UI
 

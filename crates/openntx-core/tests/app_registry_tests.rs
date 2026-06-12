@@ -165,6 +165,83 @@ fn registered_run_plan_writes_diagnostics_log() {
     assert_eq!(parsed.log_path, report.log_path);
 }
 
+#[test]
+fn run_plan_report_serializes_as_valid_json() {
+    let registry = temp_registry();
+    let manifest = fixture_manifest("json-plan-app");
+    let install_plan = registry.build_install_plan(&manifest, None);
+    registry
+        .register_plan(&manifest, &install_plan)
+        .expect("registry should write app");
+
+    let report = create_registered_run_plan(
+        &registry,
+        "json-plan-app",
+        &RunPlanOptions { write_log: false },
+    )
+    .expect("run plan should be created");
+
+    let json = serde_json::to_string_pretty(&report).expect("report should serialize");
+    let parsed: RunPlanReport =
+        serde_json::from_str(&json).expect("serialized JSON should round-trip");
+    assert_eq!(parsed.app_id, report.app_id);
+    assert_eq!(parsed.target, report.target);
+    assert_eq!(parsed.timestamp, report.timestamp);
+    assert_eq!(parsed.status, "dry-run / not implemented");
+}
+
+#[test]
+fn run_plan_without_log_does_not_create_file() {
+    let registry = temp_registry();
+    let manifest = fixture_manifest("nolog-app");
+    let install_plan = registry.build_install_plan(&manifest, None);
+    registry
+        .register_plan(&manifest, &install_plan)
+        .expect("registry should write app");
+
+    let report =
+        create_registered_run_plan(&registry, "nolog-app", &RunPlanOptions { write_log: false })
+            .expect("run plan should be created");
+
+    assert!(report.log_path.is_none(), "no log should be created");
+    assert!(
+        !registry.paths().logs_root.exists() || {
+            let entries = fs::read_dir(&registry.paths().logs_root)
+                .expect("read logs dir")
+                .count();
+            entries == 0
+        }
+    );
+}
+
+#[test]
+fn run_plan_includes_target_and_timestamp() {
+    let registry = temp_registry();
+    let manifest = fixture_manifest("timestamp-app");
+    let install_plan = registry.build_install_plan(&manifest, None);
+    registry
+        .register_plan(&manifest, &install_plan)
+        .expect("registry should write app");
+
+    let report = create_registered_run_plan(
+        &registry,
+        "timestamp-app",
+        &RunPlanOptions { write_log: false },
+    )
+    .expect("run plan should be created");
+
+    assert_eq!(report.target, "timestamp-app");
+    assert!(
+        report.timestamp.contains('T'),
+        "timestamp should be ISO 8601-like"
+    );
+    assert!(
+        report.timestamp.ends_with('Z'),
+        "timestamp should end with Z for UTC"
+    );
+    assert!(report.created_at_unix > 0);
+}
+
 fn fixture_manifest(app_id: &str) -> AppManifest {
     let name = app_id
         .split('-')

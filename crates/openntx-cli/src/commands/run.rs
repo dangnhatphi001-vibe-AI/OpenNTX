@@ -31,6 +31,7 @@ pub fn run(target: &str, json: bool, _log: bool, no_log: bool, notify: bool) -> 
 
 fn print_human_report(report: &RunPlanReport) {
     output::title("OpenNTX Run Plan");
+    output::field("Target", &report.target);
     output::field("App ID", &report.app_id);
     output::field("Name", &report.name);
     output::field("Executable", &report.executable_path);
@@ -42,6 +43,7 @@ fn print_human_report(report: &RunPlanReport) {
     output::field("Desktop entry", &report.desktop_entry_path);
     output::field("Backend", &report.backend);
     output::field("Status", &report.status);
+    output::field("Timestamp", &report.timestamp);
     if let Some(log_path) = &report.log_path {
         output::field("Run-plan log", log_path);
     }

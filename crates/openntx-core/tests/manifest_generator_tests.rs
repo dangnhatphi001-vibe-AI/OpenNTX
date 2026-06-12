@@ -66,8 +66,8 @@ fn generates_manifest_from_x86_64_pe32_plus_gui_fixture() {
 
     let manifest = generate_for_path(&path);
     assert_eq!(manifest.architecture, "x86_64");
-    assert_eq!(manifest.install_mode, "captured");
-    assert_eq!(manifest.source.source_type, "installer");
+    assert_eq!(manifest.install_mode, "portable");
+    assert_eq!(manifest.source.source_type, "portable");
     assert_eq!(
         manifest.diagnostics.imported_dlls,
         vec!["KERNEL32.dll", "USER32.dll"]
@@ -140,6 +140,72 @@ fn generated_manifest_json_is_valid() {
     let _ = fs::remove_file(path);
 }
 
+#[test]
+fn cpu_z_like_gui_filename_is_consistent_run_once() {
+    let path = write_fixture(
+        "cpu-z_2.20.2-en.exe",
+        PeFixture {
+            machine: 0x014c,
+            magic: 0x010b,
+            subsystem: 2, // WindowsGui
+            characteristics: 0x0002,
+            image_base: 0x0040_0000,
+            imports: &["kernel32.dll", "user32.dll"],
+        },
+    );
+
+    let analysis = analyze_pe(&path).expect("PE fixture should analyze");
+    assert_eq!(
+        analysis.suggested_mode, "run-once",
+        "analyzer should suggest run-once for portable GUI tool"
+    );
+    assert_eq!(
+        analysis.install_mode_reason, "portable/tool candidate",
+        "reason should be portable/tool candidate for non-installer GUI"
+    );
+
+    let manifest = generate_for_path(&path);
+    assert_eq!(
+        manifest.install_mode, "portable",
+        "manifest should use portable for non-installer GUI tool"
+    );
+
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn installer_filename_is_consistent_captured_across_analyze_and_manifest() {
+    let path = write_fixture(
+        "npp.8.9.6.2.Installer.x64.exe",
+        PeFixture {
+            machine: 0x014c,
+            magic: 0x010b,
+            subsystem: 2, // WindowsGui
+            characteristics: 0x0002,
+            image_base: 0x0040_0000,
+            imports: &["KERNEL32.dll"],
+        },
+    );
+
+    let analysis = analyze_pe(&path).expect("PE fixture should analyze");
+    assert_eq!(
+        analysis.suggested_mode, "capture-install",
+        "analyzer should suggest capture-install for installer filename"
+    );
+    assert_eq!(
+        analysis.install_mode_reason, "installer-looking filename",
+        "reason should be installer-looking filename"
+    );
+
+    let manifest = generate_for_path(&path);
+    assert_eq!(
+        manifest.install_mode, "captured",
+        "manifest should use captured for installer filename"
+    );
+    assert_eq!(manifest.source.source_type, "installer");
+
+    let _ = fs::remove_file(path);
+}
 fn generate_for_path(path: &Path) -> AppManifest {
     let analysis = analyze_pe(path).expect("PE fixture should analyze");
     let display_name = path.file_stem().and_then(|value| value.to_str()).unwrap();

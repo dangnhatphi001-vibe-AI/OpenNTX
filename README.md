@@ -152,6 +152,14 @@ cargo test --workspace
 tools/dev-check.sh
 ```
 
+Install the CLI binary:
+
+```bash
+cargo install --path crates/openntx-cli
+```
+
+This installs the `openntx` binary to `~/.cargo/bin/`. If you have an older version installed, this command will replace it with the latest build.
+
 Optional schema validation:
 
 ```bash

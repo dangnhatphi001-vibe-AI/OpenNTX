@@ -20,3 +20,14 @@ fn desktop_entry_replaces_newlines() {
     let entry = generate_desktop_entry(&manifest, "openntx").expect("desktop entry");
     assert!(entry.contains("Name=Example App"));
 }
+
+#[test]
+fn desktop_exec_includes_notify_flag() {
+    let manifest = AppManifest::minimal("test-notify-app", "Test Notify", "C:/Test/App.exe");
+    let entry = generate_desktop_entry(&manifest, "openntx").expect("desktop entry");
+
+    assert!(
+        entry.contains("Exec=openntx run test-notify-app --notify"),
+        "Exec line should include --notify flag"
+    );
+}

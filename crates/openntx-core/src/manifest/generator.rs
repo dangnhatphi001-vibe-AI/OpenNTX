@@ -3,7 +3,7 @@ use crate::manifest::model::{
     GraphicsConfig, PackagingConfig, RegistryConfig, SourceConfig, WindowsCompatibilityConfig,
 };
 use crate::manifest::validate_manifest;
-use crate::pe::{PeAnalysis, PeArchitecture, PeFormat, PeImageKind, WindowsSubsystem};
+use crate::pe::{PeAnalysis, PeArchitecture, PeFormat, WindowsSubsystem};
 use crate::sandbox::SandboxPolicy;
 use crate::{OpenNtxError, Result};
 use sha2::{Digest, Sha256};
@@ -130,25 +130,15 @@ pub fn generate_manifest_from_pe(input: ManifestGenerationInput<'_>) -> Result<G
 pub fn install_mode_for(analysis: &PeAnalysis) -> &'static str {
     if analysis.suggested_mode == "capture-install" {
         "captured"
-    } else if analysis.subsystem == Some(WindowsSubsystem::WindowsGui)
-        && analysis.image_kind == PeImageKind::Executable
-    {
-        "captured"
+    } else if analysis.suggested_mode == "unsupported" {
+        "unsupported"
     } else {
         "portable"
     }
 }
 
-fn install_mode_reason(analysis: &PeAnalysis) -> &'static str {
-    if analysis.suggested_mode == "capture-install" {
-        "installer-looking filename"
-    } else if analysis.subsystem == Some(WindowsSubsystem::WindowsGui)
-        && analysis.image_kind == PeImageKind::Executable
-    {
-        "Windows GUI executable"
-    } else {
-        "console or portable-looking executable"
-    }
+fn install_mode_reason(analysis: &PeAnalysis) -> &str {
+    &analysis.install_mode_reason
 }
 
 fn architecture_string(architecture: &PeArchitecture) -> &'static str {

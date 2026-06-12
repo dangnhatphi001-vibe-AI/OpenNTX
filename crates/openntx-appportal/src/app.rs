@@ -229,6 +229,7 @@ impl AppPortalApp {
         clear_screen();
         println!("OpenNTX Run Plan");
         println!("----------------");
+        println!("Target: {}", report.target);
         println!("App ID: {}", report.app_id);
         println!("Name: {}", report.name);
         println!("Executable: {}", report.executable_path);
@@ -239,13 +240,16 @@ impl AppPortalApp {
         println!("Desktop status: {}", report.desktop_status);
         println!("Backend: {}", report.backend);
         println!("Status: {}", report.status);
+        println!("Timestamp: {}", report.timestamp);
         if let Some(log_path) = &report.log_path {
             println!("Run-plan log: {log_path}");
         }
         println!();
         println!(
-            "Runtime execution is not implemented in V0.7. This action only validates app metadata and prepares a future execution plan."
+            "{} is registered, but runtime execution is not implemented in V0.7.",
+            report.name
         );
+        println!("This action only validates app metadata and prepares a future execution plan.");
         pause("No Windows binary was executed.")
     }
 

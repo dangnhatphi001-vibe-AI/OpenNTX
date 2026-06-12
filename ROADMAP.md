@@ -9,6 +9,7 @@ OpenNTX is ambitious but must remain honest about what is implemented.
 - Local app registry and install plan writer implemented.
 - Desktop launcher writer implemented.
 - Run-plan diagnostics and default log writing implemented.
+- Unified install-mode heuristic across analyze, manifest generate, and install flows.
 - AppPortal reads the real local app registry and manages basic analysis-only actions.
 - Windows runtime execution is not implemented.
 - Installer execution and capture remain future modules.

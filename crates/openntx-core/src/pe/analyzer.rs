@@ -128,6 +128,8 @@ pub fn analyze_pe(path: impl AsRef<Path>) -> Result<PeAnalysis> {
         PeImageKind::Executable
     };
 
+    let (mode, mode_reason) = suggested_mode(&file_name, &image_kind, subsystem.as_ref());
+
     Ok(PeAnalysis {
         path: path.to_path_buf(),
         file_name: file_name.clone(),
@@ -143,7 +145,8 @@ pub fn analyze_pe(path: impl AsRef<Path>) -> Result<PeAnalysis> {
         optional_header,
         sections,
         imported_dlls,
-        suggested_mode: suggested_mode(&file_name).to_string(),
+        suggested_mode: mode.to_string(),
+        install_mode_reason: mode_reason.to_string(),
         status: "analysis-only".to_string(),
         warnings,
     })
@@ -164,6 +167,7 @@ fn not_pe(path: &Path, file_name: String, warning: &str) -> PeAnalysis {
         sections: Vec::new(),
         imported_dlls: Vec::new(),
         suggested_mode: "unsupported".to_string(),
+        install_mode_reason: "not a PE file".to_string(),
         status: "not-pe".to_string(),
         warnings: vec![warning.to_string()],
     }
@@ -403,11 +407,38 @@ fn map_subsystem(value: u16) -> WindowsSubsystem {
     }
 }
 
-fn suggested_mode(file_name: &str) -> &'static str {
+fn suggested_mode(
+    file_name: &str,
+    image_kind: &PeImageKind,
+    subsystem: Option<&WindowsSubsystem>,
+) -> (&'static str, &'static str) {
     let lower = file_name.to_ascii_lowercase();
-    if lower.contains("setup") || lower.contains("install") || lower.contains("installer") {
-        "capture-install"
-    } else {
-        "run-once"
+
+    // DLL images are not runnable executables
+    if *image_kind == PeImageKind::DynamicLibrary {
+        return ("unsupported", "DLL / library image");
     }
+
+    // Installer-looking filenames are always captured
+    if lower.contains("setup")
+        || lower.contains("install")
+        || lower.contains("installer")
+        || lower.contains("wizard")
+        || lower.contains("bootstrapper")
+    {
+        return ("capture-install", "installer-looking filename");
+    }
+
+    // Console executables are run-once / portable
+    if subsystem == Some(&WindowsSubsystem::WindowsCui) {
+        return ("run-once", "console executable");
+    }
+
+    // GUI executable without installer-looking filename is a portable/tool candidate
+    if subsystem == Some(&WindowsSubsystem::WindowsGui) {
+        return ("run-once", "portable/tool candidate");
+    }
+
+    // Fallback
+    ("run-once", "Windows executable fallback")
 }

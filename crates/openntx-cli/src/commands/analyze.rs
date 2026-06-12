@@ -64,6 +64,7 @@ pub fn run(file: &Path) -> Result<()> {
         output::field("Imported DLLs", analysis.imported_dlls.join(", "));
     }
     output::field("Suggested mode", &analysis.suggested_mode);
+    output::field("Mode reason", &analysis.install_mode_reason);
     output::field("Status", &analysis.status);
 
     for warning in &analysis.warnings {

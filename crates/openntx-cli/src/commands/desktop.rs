@@ -76,7 +76,7 @@ fn create(app_id: &str, dry_run: bool, yes: bool) -> Result<()> {
     if !plan.written {
         output::blank();
         output::note(
-            "Use --yes to write the .desktop launcher. Exec will call `openntx run <app-id>`.",
+            "Use --yes to write the .desktop launcher. Exec will call `openntx run <app-id> --notify`.",
         );
     }
     Ok(())

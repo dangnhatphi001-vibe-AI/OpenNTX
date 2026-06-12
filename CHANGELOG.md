@@ -4,6 +4,7 @@ All notable changes to OpenNTX will be documented in this file.
 
 ## Unreleased
 
+- Add V0.7 run-plan UX and diagnostics with registered manifest loading, human and JSON output, default run-plan log writing, optional `--notify`, AppPortal run-plan reuse, and desktop launcher `--notify` Exec.
 - Add V0.6 registry-backed AppPortal TUI with real app library, app details, PE analysis, install-plan writing, desktop launcher actions, dry-run run plan, and confirmed app removal.
 - Add V0.5 desktop launcher writer with `openntx desktop create/remove`, `install --write-plan --desktop`, launcher status in list/show, and desktop create/remove tests.
 - Add V0.4 app registry and install plan writer with `openntx install --write-plan`, `openntx list`, `openntx show`, and confirmed/dry-run remove behavior.
@@ -12,6 +13,16 @@ All notable changes to OpenNTX will be documented in this file.
 - Add V0.1.1 polish: CI workflow, README badges, GitHub issue and pull request templates, architecture diagram, testing guide, and screenshots placeholder.
 - Add V0.1 foundation documentation, schemas, examples, Rust workspace, CLI skeleton, core models, AppPortal mock, and development scripts.
 - Add source-available noncommercial licensing and commercial-license terms.
+
+## 0.7.0 - Run Plan UX and Diagnostics
+
+- Load registered app manifests in `openntx run <app-id>`.
+- Show real app metadata in run-plan output.
+- Write JSON diagnostics logs under `~/.local/state/openntx/logs/`.
+- Add `openntx run <app-id> --json`.
+- Add optional `openntx run <app-id> --notify` using `notify-send` when available.
+- Update desktop launchers to call `openntx run <app-id> --notify`.
+- Reuse the same run-plan logic in AppPortal.
 
 ## 0.6.0 - AppPortal Registry UI
 

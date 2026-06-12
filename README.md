@@ -3,7 +3,7 @@
 [![CI](https://github.com/openntx/openntx/actions/workflows/ci.yml/badge.svg)](https://github.com/openntx/openntx/actions/workflows/ci.yml)
 ![Status](https://img.shields.io/badge/status-experimental-orange)
 ![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)
-![Runtime](https://img.shields.io/badge/runtime-not%20implemented%20in%20V0.6-lightgrey)
+![Runtime](https://img.shields.io/badge/runtime-not%20implemented%20in%20V0.7-lightgrey)
 
 **Drop EXE. Run Native.**
 
@@ -24,7 +24,7 @@ OpenNTX is a source-available project. The default license is noncommercial; com
 - Not a Bottles clone.
 - Not a Lutris clone.
 - Not a VM manager.
-- Not a complete Windows runtime in V0.6.
+- Not a complete Windows runtime in V0.7.
 - Not a tool for bypassing DRM, anti-cheat, security controls, or malware analysis safeguards.
 
 ## Why This Exists
@@ -43,7 +43,7 @@ The target user experience:
 
 ## Current Status
 
-OpenNTX V0.6 is an experimental foundation with real PE analysis, manifest generation, local app registry plan writing, Linux desktop launcher writing, and a registry-backed AppPortal TUI.
+OpenNTX V0.7 is an experimental foundation with real PE analysis, manifest generation, local app registry plan writing, Linux desktop launcher writing, run-plan diagnostics, and a registry-backed AppPortal TUI.
 
 It includes:
 
@@ -56,6 +56,7 @@ It includes:
 - manifest generator that converts PE metadata into OpenNTX app manifests
 - local app registry writer for analysis-only install plans
 - desktop launcher writer for registered apps
+- run-plan UX that loads registered manifests, prints real app metadata, writes diagnostics logs, and can notify desktop users
 - CLI skeleton
 - registry-backed AppPortal TUI for registered apps and basic OpenNTX actions
 - development scripts
@@ -83,7 +84,7 @@ OpenNTX Core
     v
 Runtime backend abstraction
     |
-    +--> NotImplementedBackend        (V0.6)
+    +--> NotImplementedBackend        (V0.7)
     +--> ExternalCompatibilityBackend (future placeholder)
     +--> FutureNativeBackend          (future PE/NT/Win32 research)
 ```
@@ -92,7 +93,7 @@ The CLI and AppPortal call the core. Runtime logic must not live in the GUI.
 
 ## AppPortal Concept
 
-AppPortal is the user-facing install surface. V0.6 ships as a lightweight terminal UI that reads the real OpenNTX app registry and manages analysis-only registry actions without heavy GUI dependencies.
+AppPortal is the user-facing install surface. V0.7 ships as a lightweight terminal UI that reads the real OpenNTX app registry and manages analysis-only registry actions without heavy GUI dependencies.
 
 Current AppPortal surfaces:
 
@@ -125,12 +126,14 @@ openntx show example-app
 openntx remove example-app --dry-run
 openntx remove example-app --yes
 openntx run example-app
+openntx run example-app --json
+openntx run example-app --notify
 openntx package example-app
 openntx remove example-app
 openntx doctor ~/Downloads/setup.exe
 ```
 
-V0.6 commands produce validation, manifest generation, local registry plan writing, desktop launcher writing, AppPortal registry UI, and planning output. They do not execute Windows binaries.
+V0.7 commands produce validation, manifest generation, local registry plan writing, desktop launcher writing, AppPortal registry UI, run-plan logs, and planning output. They do not execute Windows binaries.
 
 ## Development
 
@@ -156,7 +159,7 @@ python3 -m pip install --user jsonschema
 tools/dev-check.sh
 ```
 
-## How to Test V0.6
+## How to Test V0.7
 
 Run the required local checks:
 
@@ -173,6 +176,8 @@ Run CLI and AppPortal smoke checks:
 cargo run -p openntx-cli -- package example-app
 cargo run -p openntx-cli -- manifest generate ./path/to/app.exe --json
 XDG_DATA_HOME="$(mktemp -d)" cargo run -p openntx-cli -- install ./path/to/app.exe --write-plan --desktop
+cargo run -p openntx-cli -- run <app-id> --json
+cargo run -p openntx-cli -- run <app-id> --notify
 tools/mock-install-flow.sh
 cargo run -p openntx-appportal
 ```
@@ -184,11 +189,11 @@ Manual AppPortal flow:
 3. Use Analyze EXE to inspect a PE file and preview a manifest.
 4. Use Write Install Plan to register app metadata after confirmation.
 5. Use Desktop Launcher to create or remove a launcher after confirmation.
-6. Use Run Plan to verify the runtime placeholder.
+6. Use Run Plan to verify the runtime placeholder and diagnostics log path.
 
-The mock install flow creates a temporary minimal PE fixture and demonstrates analysis, manifest metadata, registry plan writing, desktop launcher writing, and install planning only. OpenNTX V0.6 does not execute Windows binaries or installers.
+The mock install flow creates a temporary minimal PE fixture and demonstrates analysis, manifest metadata, registry plan writing, desktop launcher writing, and install planning only. OpenNTX V0.7 does not execute Windows binaries or installers.
 
-See [docs/testing.md](docs/testing.md) for the full test guide and V0.6 test boundaries.
+See [docs/testing.md](docs/testing.md) for the full test guide and V0.7 test boundaries.
 
 ## Roadmap Summary
 

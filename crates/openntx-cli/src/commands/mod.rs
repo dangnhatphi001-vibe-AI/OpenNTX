@@ -22,6 +22,14 @@ pub enum Commands {
     Run {
         #[arg(value_name = "app-or-file")]
         target: String,
+        #[arg(long)]
+        json: bool,
+        #[arg(long)]
+        log: bool,
+        #[arg(long)]
+        no_log: bool,
+        #[arg(long)]
+        notify: bool,
     },
     Install {
         #[arg(value_name = "file.exe")]
@@ -65,7 +73,13 @@ pub enum Commands {
 pub fn execute(command: Commands) -> Result<()> {
     match command {
         Commands::Analyze { file } => analyze::run(&file),
-        Commands::Run { target } => run::run(&target),
+        Commands::Run {
+            target,
+            json,
+            log,
+            no_log,
+            notify,
+        } => run::run(&target, json, log, no_log, notify),
         Commands::Install {
             file,
             write_plan,

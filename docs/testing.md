@@ -1,6 +1,6 @@
-# Testing OpenNTX V0.6
+# Testing OpenNTX V0.7
 
-OpenNTX V0.6 is a foundation release with real PE metadata analysis, manifest generation, local app registry plan writing, desktop launcher writing, and a registry-backed AppPortal TUI. Tests verify static analysis, schemas, CLI planning, core data models, PE headers, section tables, subsystem detection, entry point, image base, imported DLL names, generated manifest validation, registry directory creation, list/show, remove dry-run/delete behavior, desktop launcher create/remove behavior, registry summary fields used by AppPortal, and AppPortal confirmation parsing. They do not verify Windows application execution because runtime execution is not implemented.
+OpenNTX V0.7 is a foundation release with real PE metadata analysis, manifest generation, local app registry plan writing, desktop launcher writing, run-plan diagnostics, and a registry-backed AppPortal TUI. Tests verify static analysis, schemas, CLI planning, core data models, PE headers, section tables, subsystem detection, entry point, image base, imported DLL names, generated manifest validation, registry directory creation, list/show, remove dry-run/delete behavior, desktop launcher create/remove behavior, run-plan log writing, registry summary fields used by AppPortal, and AppPortal confirmation parsing. They do not verify Windows application execution because runtime execution is not implemented.
 
 ## Prerequisites
 
@@ -70,11 +70,22 @@ cargo run -p openntx-cli -- desktop create <app-id> --dry-run
 cargo run -p openntx-cli -- desktop create <app-id> --yes
 cargo run -p openntx-cli -- desktop remove <app-id> --dry-run
 cargo run -p openntx-cli -- desktop remove <app-id> --yes
+cargo run -p openntx-cli -- run <app-id>
+cargo run -p openntx-cli -- run <app-id> --json
+cargo run -p openntx-cli -- run <app-id> --notify
 cargo run -p openntx-cli -- remove <app-id> --dry-run
 cargo run -p openntx-cli -- remove <app-id> --yes
 ```
 
 `openntx install app.exe` remains dry-run unless `--write-plan` is passed.
+
+Run-plan logs are written by default under:
+
+```text
+~/.local/state/openntx/logs/
+```
+
+Use `--no-log` only for cases where a diagnostics file is not wanted.
 
 ## AppPortal Smoke Test
 
@@ -97,7 +108,7 @@ Inside AppPortal:
 1. Choose Library.
 2. Select the registered app by number.
 3. Review App Details.
-4. Choose Run plan and verify it reports runtime execution is not implemented.
+4. Choose Run plan and verify it reports runtime execution is not implemented and shows a run-plan log path.
 5. Choose Create desktop launcher and confirm writing.
 6. Return to details and verify desktop status changes to present.
 7. Choose Remove desktop launcher and confirm removal.
@@ -113,9 +124,9 @@ openntx desktop create <app-id> --yes
 gtk-launch openntx-<app-id>
 ```
 
-`gtk-launch` should only reach `openntx run <app-id>`, which remains a dry-run runtime placeholder.
+`gtk-launch` should only reach `openntx run <app-id> --notify`, which remains a dry-run runtime placeholder and writes diagnostics.
 
-## What V0.6 Tests Do Not Cover
+## What V0.7 Tests Do Not Cover
 
 - Windows process execution.
 - Installer execution.

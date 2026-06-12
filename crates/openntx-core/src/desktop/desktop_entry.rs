@@ -36,7 +36,7 @@ pub fn generate_desktop_entry(manifest: &AppManifest, cli_command: &str) -> Resu
          Type=Application\n\
          Name={name}\n\
          Comment=Windows application managed by OpenNTX\n\
-         Exec={} run {}\n\
+         Exec={} run {} --notify\n\
          Icon={icon}\n\
          Categories={categories}\n\
          StartupNotify=true\n\

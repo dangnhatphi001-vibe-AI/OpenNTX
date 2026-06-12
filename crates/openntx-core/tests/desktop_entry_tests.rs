@@ -9,7 +9,7 @@ fn desktop_entry_contains_openntx_run_command() {
     assert!(entry.contains("[Desktop Entry]"));
     assert!(entry.contains("Type=Application"));
     assert!(entry.contains("Name=Example App"));
-    assert!(entry.contains("Exec=openntx run example-app"));
+    assert!(entry.contains("Exec=openntx run example-app --notify"));
     assert!(entry.contains("Icon=example-app"));
 }
 

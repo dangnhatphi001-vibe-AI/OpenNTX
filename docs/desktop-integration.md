@@ -19,10 +19,10 @@ System package desktop entries:
 The launcher should execute:
 
 ```text
-openntx run <app-id>
+openntx run <app-id> --notify
 ```
 
-V0.6 writes user launchers for registered apps through the CLI and AppPortal:
+V0.7 writes user launchers for registered apps through the CLI and AppPortal:
 
 ```bash
 openntx desktop create <app-id> --dry-run
@@ -32,7 +32,7 @@ openntx desktop remove <app-id> --yes
 openntx install app.exe --write-plan --desktop
 ```
 
-`openntx desktop create` is dry-run by default. `--yes` is required to write the file. The generated `Exec` line intentionally calls `openntx run <app-id>` even though runtime execution is still not implemented.
+`openntx desktop create` is dry-run by default. `--yes` is required to write the file. The generated `Exec` line intentionally calls `openntx run <app-id> --notify` so desktop launches produce clear feedback and diagnostics logs even though runtime execution is still not implemented.
 
 AppPortal uses the same core desktop writer:
 

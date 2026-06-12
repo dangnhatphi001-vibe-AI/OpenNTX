@@ -2,12 +2,13 @@
 
 OpenNTX is ambitious but must remain honest about what is implemented.
 
-## Current V0.6 Status
+## Current V0.7 Status
 
 - Real PE analyzer implemented.
 - Manifest generation from PE metadata implemented.
 - Local app registry and install plan writer implemented.
 - Desktop launcher writer implemented.
+- Run-plan diagnostics and default log writing implemented.
 - AppPortal reads the real local app registry and manages basic analysis-only actions.
 - Windows runtime execution is not implemented.
 - Installer execution and capture remain future modules.
@@ -68,7 +69,7 @@ OpenNTX is ambitious but must remain honest about what is implemented.
 - NotImplementedBackend.
 - ExternalCompatibilityBackend placeholder.
 - FutureNativeBackend placeholder.
-- Logging and diagnostics model.
+- Run-plan logging and diagnostics model.
 
 ## Phase 6: Experimental Win32/NT Compatibility Research
 

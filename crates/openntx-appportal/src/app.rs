@@ -7,7 +7,7 @@ use openntx_core::pe::{analyze_pe, PeAnalysis};
 use openntx_core::registry::{
     AppRegistry, DesktopMode, InstallPlan, RegisteredApp, RegistrationResult, RemoveMode,
 };
-use openntx_core::runtime::{NotImplementedBackend, RuntimeBackend};
+use openntx_core::runtime::{create_registered_run_plan, RunPlanOptions};
 use openntx_core::{OpenNtxError, Result};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -92,7 +92,9 @@ impl AppPortalApp {
             );
 
             match prompt("Select action")?.as_str() {
-                value if value.eq_ignore_ascii_case("r") => self.run_plan_screen(&manifest)?,
+                value if value.eq_ignore_ascii_case("r") => {
+                    self.run_plan_screen(&manifest.app_id)?
+                }
                 value if value.eq_ignore_ascii_case("c") => self.create_desktop_screen(app_id)?,
                 value if value.eq_ignore_ascii_case("x") => self.remove_desktop_screen(app_id)?,
                 value if value.eq_ignore_ascii_case("d") => {
@@ -221,19 +223,28 @@ impl AppPortalApp {
         pause("Press Enter to return.")
     }
 
-    fn run_plan_screen(&self, manifest: &AppManifest) -> Result<()> {
-        let backend = NotImplementedBackend;
-        let plan = backend.plan_execution(manifest);
+    fn run_plan_screen(&self, app_id: &str) -> Result<()> {
+        let report =
+            create_registered_run_plan(&self.registry, app_id, &RunPlanOptions::default())?;
         clear_screen();
         println!("OpenNTX Run Plan");
         println!("----------------");
-        println!("App ID: {}", plan.app_id);
-        println!("Executable: {}", plan.executable);
-        println!("Backend: {}", plan.backend);
-        println!("Status: dry-run / not implemented");
+        println!("App ID: {}", report.app_id);
+        println!("Name: {}", report.name);
+        println!("Executable: {}", report.executable_path);
+        println!("Architecture: {}", report.architecture);
+        println!("Install mode: {}", report.install_mode);
+        println!("Sandbox profile: {}", report.sandbox_profile);
+        println!("Imported DLL count: {}", report.imported_dll_count);
+        println!("Desktop status: {}", report.desktop_status);
+        println!("Backend: {}", report.backend);
+        println!("Status: {}", report.status);
+        if let Some(log_path) = &report.log_path {
+            println!("Run-plan log: {log_path}");
+        }
         println!();
         println!(
-            "Runtime execution is not implemented in V0.6. This action only validates app metadata and prepares a future execution plan."
+            "Runtime execution is not implemented in V0.7. This action only validates app metadata and prepares a future execution plan."
         );
         pause("No Windows binary was executed.")
     }

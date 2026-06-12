@@ -2,7 +2,7 @@
 
 AppPortal is the user-friendly frontend for OpenNTX. It is not the runtime and must not contain compatibility-layer logic.
 
-V0.6 provides a lightweight terminal UI that reads the real OpenNTX app registry from:
+V0.7 provides a lightweight terminal UI that reads the real OpenNTX app registry from:
 
 ```text
 ~/.local/share/openntx/apps/
@@ -59,7 +59,11 @@ Available actions:
 - Remove app with explicit app-id confirmation.
 - Back.
 
-Run plan remains honest: runtime execution is not implemented in V0.6.
+Run plan remains honest: runtime execution is not implemented in V0.7. AppPortal uses the same core run-plan logic as `openntx run <app-id>` and writes a diagnostics log under:
+
+```text
+~/.local/state/openntx/logs/
+```
 
 ## Analyze EXE
 
@@ -104,10 +108,10 @@ Desktop entries are written to:
 The generated `Exec` line calls:
 
 ```text
-openntx run <app-id>
+openntx run <app-id> --notify
 ```
 
-`openntx run` still produces a dry-run runtime plan.
+`openntx run` still produces a dry-run runtime plan and writes diagnostics metadata.
 
 ## Settings
 
@@ -123,4 +127,4 @@ Settings shows:
 
 ## Background Services
 
-V0.6 does not require a heavy background daemon. Future background services must have a documented reason, narrow permissions, and clear diagnostics.
+V0.7 does not require a heavy background daemon. Future background services must have a documented reason, narrow permissions, and clear diagnostics.

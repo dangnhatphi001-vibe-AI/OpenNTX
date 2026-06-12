@@ -33,6 +33,6 @@ Capture reports are structured JSON documents containing:
 - warnings
 - errors
 
-## V0.6 Limitation
+## V0.7 Limitation
 
-V0.6 can generate an initial manifest from PE metadata before capture. It still does not execute installers or perform real filesystem/registry diff capture.
+V0.7 can generate an initial manifest from PE metadata before capture. It still does not execute installers or perform real filesystem/registry diff capture.

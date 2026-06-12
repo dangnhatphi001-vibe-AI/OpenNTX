@@ -1,6 +1,7 @@
 use openntx_core::manifest::AppManifest;
 use openntx_core::paths::OpenNtxPaths;
 use openntx_core::registry::{AppRegistry, DesktopMode, RemoveMode};
+use openntx_core::runtime::{create_registered_run_plan, RunPlanOptions, RunPlanReport};
 use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -99,7 +100,9 @@ fn desktop_create_and_remove_support_dry_run_and_write() {
         .create_desktop_entry("desktop-app", DesktopMode::DryRun, "openntx")
         .expect("desktop dry-run should plan");
     assert!(!dry_run.written);
-    assert!(dry_run.content.contains("Exec=openntx run desktop-app"));
+    assert!(dry_run
+        .content
+        .contains("Exec=openntx run desktop-app --notify"));
     assert!(!dry_run.desktop_entry_path.exists());
 
     let written = registry
@@ -122,6 +125,44 @@ fn desktop_create_and_remove_support_dry_run_and_write() {
         .expect("desktop remove should delete");
     assert!(removed.removed);
     assert!(!written.desktop_entry_path.exists());
+}
+
+#[test]
+fn registered_run_plan_writes_diagnostics_log() {
+    let registry = temp_registry();
+    let mut manifest = fixture_manifest("run-plan-app");
+    manifest.diagnostics.imported_dlls = vec!["KERNEL32.dll".to_string(), "USER32.dll".to_string()];
+    let install_plan = registry.build_install_plan(&manifest, None);
+    registry
+        .register_plan(&manifest, &install_plan)
+        .expect("registry should write app");
+    registry
+        .create_desktop_entry("run-plan-app", DesktopMode::Write, "openntx")
+        .expect("desktop write should succeed");
+
+    let report = create_registered_run_plan(
+        &registry,
+        "run-plan-app",
+        &RunPlanOptions { write_log: true },
+    )
+    .expect("run plan should be created");
+
+    assert_eq!(report.app_id, "run-plan-app");
+    assert_eq!(report.name, "Run Plan App");
+    assert_eq!(report.executable_path, "C:/Example/App.exe");
+    assert_eq!(report.architecture, "x86_64");
+    assert_eq!(report.install_mode, "portable");
+    assert_eq!(report.sandbox_profile, "standard");
+    assert_eq!(report.imported_dll_count, 2);
+    assert_eq!(report.desktop_status, "present");
+    assert_eq!(report.status, "dry-run / not implemented");
+    let log_path = PathBuf::from(report.log_path.as_ref().expect("log path"));
+    assert!(log_path.is_file());
+
+    let log_json = fs::read_to_string(&log_path).expect("run plan log");
+    let parsed: RunPlanReport = serde_json::from_str(&log_json).expect("valid run plan json");
+    assert_eq!(parsed.app_id, "run-plan-app");
+    assert_eq!(parsed.log_path, report.log_path);
 }
 
 fn fixture_manifest(app_id: &str) -> AppManifest {

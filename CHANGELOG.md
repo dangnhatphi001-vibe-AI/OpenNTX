@@ -4,12 +4,15 @@ All notable changes to OpenNTX will be documented in this file.
 
 ## Unreleased
 
-- Harden manifest loading: reject symlinked `manifest.json` before reading content with clear "unsafe file" error.
-- Harden `list_apps`: skip apps with symlinked manifest instead of following symlink and failing with JSON parse error.
-- Add `read_json_safe` helper that uses `symlink_metadata()` to reject symlinks and non-regular files before reading.
-- Add security tests: symlinked manifest rejection for `load_manifest`, `list_apps`, `snapshot_before`, `capture_status`, and `read_json_safe`.
-- Each security probe test uses a fresh app registry so one corrupted probe does not affect the next.
-- Update manual security probe docs in `docs/installer-capture.md`.
+## 0.9.0 - Debian Package Builder Polish
+
+- Bump workspace version to 0.9.0.
+- Build .deb with `dpkg-deb --root-owner-group` so package contents are root/root.
+- Set 0644 permissions on regular data files (.json, .txt, .desktop) in staging.
+- Set 0755 permissions on directories in staging.
+- Keep dry-run default for `openntx package build`.
+- Add `set_staging_permissions` helper for recursive Unix permission fixing.
+- Update README, CHANGELOG, ROADMAP, docs for V0.9.
 
 ## 0.8.0 - Installer Capture Snapshot/Diff Infrastructure
 

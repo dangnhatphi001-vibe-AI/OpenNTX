@@ -4,6 +4,7 @@ use openntx_core::capture::CaptureRegistryService;
 use openntx_core::manifest::{
     generate_manifest_from_pe, AppManifest, GeneratedManifest, ManifestGenerationInput,
 };
+use openntx_core::packaging::{build_deb_package, DebBuildOptions};
 use openntx_core::pe::{analyze_pe, PeAnalysis};
 use openntx_core::registry::{
     AppRegistry, DesktopMode, InstallPlan, RegisteredApp, RegistrationResult, RemoveMode,
@@ -108,6 +109,7 @@ impl AppPortalApp {
                 value if value.eq_ignore_ascii_case("3") => self.capture_diff_screen(app_id)?,
                 value if value.eq_ignore_ascii_case("4") => self.capture_report_screen(app_id)?,
                 value if value.eq_ignore_ascii_case("5") => self.capture_status_screen(app_id)?,
+                value if value.eq_ignore_ascii_case("p") => self.package_screen(app_id)?,
                 value if value.eq_ignore_ascii_case("d") => {
                     self.remove_app_dry_run_screen(app_id)?
                 }
@@ -443,6 +445,69 @@ impl AppPortalApp {
         pause("Press Enter to return.")
     }
 
+    fn package_screen(&self, app_id: &str) -> Result<()> {
+        let manifest = self.registry.load_manifest(app_id)?;
+
+        // Show dry-run plan first
+        let mut options = DebBuildOptions::new(app_id);
+        options.dry_run = true;
+
+        let plan = match build_deb_package(&self.registry, &options) {
+            Ok(p) => p,
+            Err(e) => {
+                pause(&format!("Package plan failed: {e}"))?;
+                return Ok(());
+            }
+        };
+
+        clear_screen();
+        println!("OpenNTX Package (.deb)");
+        println!("----------------------");
+        println!("App ID: {app_id}");
+        println!("App name: {}", manifest.name);
+        println!("Package name: {}", plan.package_name);
+        println!("Version: {}", plan.version);
+        println!("Deb filename: {}", plan.deb_filename);
+        println!();
+        println!("Files to package:");
+        for file in &plan.files_to_package {
+            println!("  {file}");
+        }
+        println!();
+        println!("Layout app root: {}", plan.layout.app_root.display());
+        println!(
+            "Layout desktop entry: {}",
+            plan.layout.desktop_entry_path.display()
+        );
+        println!("Runtime dependency: {}", plan.layout.runtime_dependency);
+        println!();
+        println!("No EXE files will be executed. No installers will run.");
+        println!();
+
+        if confirm("Build this .deb package?")? {
+            let mut build_options = DebBuildOptions::new(app_id);
+            build_options.dry_run = false;
+
+            match build_deb_package(&self.registry, &build_options) {
+                Ok(built_plan) => {
+                    pause(&format!(
+                        "Package built: {}",
+                        built_plan
+                            .output_dir
+                            .join(&built_plan.deb_filename)
+                            .display()
+                    ))?;
+                }
+                Err(e) => {
+                    pause(&format!("Package build failed: {e}"))?;
+                }
+            }
+        } else {
+            pause("Package not built.")?;
+        }
+        Ok(())
+    }
+
     fn run_plan_screen(&self, app_id: &str) -> Result<()> {
         let report =
             create_registered_run_plan(&self.registry, app_id, &RunPlanOptions::default())?;
@@ -737,6 +802,7 @@ fn print_app_details(
     println!("[3] Capture: Diff");
     println!("[4] Capture: Report");
     println!("[5] Capture: Status");
+    println!("[P] Package (.deb)");
     println!("[D] Dry-run remove app");
     println!("[Delete] Remove app with confirmation");
     println!("[B] Back");

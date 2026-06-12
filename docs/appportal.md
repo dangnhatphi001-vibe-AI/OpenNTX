@@ -60,6 +60,7 @@ Available actions:
 - Capture: Diff.
 - Capture: Report.
 - Capture: Status.
+- Package (.deb) — dry-run plan first, build only after confirmation.
 - Dry-run remove app.
 - Remove app with explicit app-id confirmation.
 - Back.

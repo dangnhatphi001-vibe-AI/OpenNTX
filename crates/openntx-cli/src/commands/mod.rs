@@ -53,8 +53,8 @@ pub enum Commands {
         command: capture::CaptureCommands,
     },
     Package {
-        #[arg(value_name = "app-id")]
-        app_id: String,
+        #[command(subcommand)]
+        command: package::PackageCommands,
     },
     Remove {
         #[arg(value_name = "app-id")]
@@ -93,7 +93,7 @@ pub fn execute(command: Commands) -> Result<()> {
         Commands::Desktop { command } => desktop::execute(command),
         Commands::Manifest { command } => manifest::execute(command),
         Commands::Capture { command } => capture::execute(command),
-        Commands::Package { app_id } => package::run(&app_id),
+        Commands::Package { command } => package::execute(command),
         Commands::Remove {
             app_id,
             dry_run,

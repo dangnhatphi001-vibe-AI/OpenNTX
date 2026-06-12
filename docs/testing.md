@@ -1,6 +1,6 @@
-# Testing OpenNTX V0.8
+# Testing OpenNTX V0.9
 
-OpenNTX V0.8 is a foundation release with real PE metadata analysis, manifest generation, local app registry plan writing, desktop launcher writing, run-plan diagnostics, installer capture snapshot/diff infrastructure, and a registry-backed AppPortal TUI. Tests verify static analysis, schemas, CLI planning, core data models, PE headers, section tables, subsystem detection, entry point, image base, imported DLL names, generated manifest validation, registry directory creation, list/show, remove dry-run/delete behavior, desktop launcher create/remove behavior, run-plan log writing, registry summary fields used by AppPortal, AppPortal confirmation parsing, capture snapshot creation, file created/modified/removed detection, directory created/removed detection, registry file change tracking, missing snapshot errors, capture report JSON validity, and symlink/path traversal safety. They do not verify Windows application execution because runtime execution is not implemented.
+OpenNTX V0.9 is a foundation release with real PE metadata analysis, manifest generation, local app registry plan writing, desktop launcher writing, run-plan diagnostics, installer capture snapshot/diff infrastructure, .deb package builder prototype, and a registry-backed AppPortal TUI. Tests verify static analysis, schemas, CLI planning, core data models, PE headers, section tables, subsystem detection, entry point, image base, imported DLL names, generated manifest validation, registry directory creation, list/show, remove dry-run/delete behavior, desktop launcher create/remove behavior, run-plan log writing, registry summary fields used by AppPortal, AppPortal confirmation parsing, capture snapshot creation, file created/modified/removed detection, directory created/removed detection, registry file change tracking, missing snapshot errors, capture report JSON validity, symlink/path traversal safety, package layout dry-run, package staging creation, package control file generation, package desktop file generation, package symlink rejection, and missing app handling. They do not verify Windows application execution because runtime execution is not implemented.
 
 ## Prerequisites
 
@@ -37,7 +37,8 @@ tools/dev-check.sh
 Run the package planner:
 
 ```bash
-cargo run -p openntx-cli -- package example-app
+cargo run -p openntx-cli -- package build example-app
+cargo run -p openntx-cli -- package build example-app --yes
 ```
 
 Run the mock install flow:
@@ -171,7 +172,7 @@ Automated tests cover this in `manifest_generator_tests.rs`:
 - `cpu_z_like_gui_filename_is_consistent_run_once`
 - `installer_filename_is_consistent_captured_across_analyze_and_manifest`
 
-## What V0.8 Tests Do Not Cover
+## What V0.9 Tests Do Not Cover
 
 - Windows process execution.
 - Installer execution.

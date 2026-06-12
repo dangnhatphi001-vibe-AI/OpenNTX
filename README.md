@@ -3,7 +3,7 @@
 [![CI](https://github.com/openntx/openntx/actions/workflows/ci.yml/badge.svg)](https://github.com/openntx/openntx/actions/workflows/ci.yml)
 ![Status](https://img.shields.io/badge/status-experimental-orange)
 ![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)
-![Runtime](https://img.shields.io/badge/runtime-not%20implemented%20in%20V0.8-lightgrey)
+![Runtime](https://img.shields.io/badge/runtime-not%20implemented%20in%20V0.9-lightgrey)
 
 **Drop EXE. Run Native.**
 
@@ -24,7 +24,7 @@ OpenNTX is a source-available project. The default license is noncommercial; com
 - Not a Bottles clone.
 - Not a Lutris clone.
 - Not a VM manager.
-- Not a complete Windows runtime in V0.8.
+- Not a complete Windows runtime in V0.9.
 - Not a tool for bypassing DRM, anti-cheat, security controls, or malware analysis safeguards.
 
 ## Why This Exists
@@ -43,9 +43,9 @@ The target user experience:
 
 ## Current Status
 
-OpenNTX V0.8 is an experimental foundation with real PE analysis, manifest generation, local app registry plan writing, Linux desktop launcher writing, run-plan diagnostics, installer capture snapshot/diff infrastructure, and a registry-backed AppPortal TUI.
+OpenNTX V0.9 is an experimental foundation with real PE analysis, manifest generation, local app registry plan writing, Linux desktop launcher writing, run-plan diagnostics, installer capture snapshot/diff infrastructure, .deb package builder, and a registry-backed AppPortal TUI.
 
-V0.8 adds capture snapshot/diff infrastructure only. It does not run Windows installers yet.
+V0.9 adds .deb package builder with root-owned package contents and proper file permissions. It does not run Windows installers yet.
 
 It includes:
 
@@ -87,7 +87,7 @@ OpenNTX Core
     v
 Runtime backend abstraction
     |
-    +--> NotImplementedBackend        (V0.8)
+    +--> NotImplementedBackend        (V0.9)
     +--> ExternalCompatibilityBackend (future placeholder)
     +--> FutureNativeBackend          (future PE/NT/Win32 research)
 ```
@@ -96,7 +96,7 @@ The CLI and AppPortal call the core. Runtime logic must not live in the GUI.
 
 ## AppPortal Concept
 
-AppPortal is the user-facing install surface. V0.8 ships as a lightweight terminal UI that reads the real OpenNTX app registry and manages analysis-only registry actions without heavy GUI dependencies.
+AppPortal is the user-facing install surface. V0.9 ships as a lightweight terminal UI that reads the real OpenNTX app registry and manages analysis-only registry actions without heavy GUI dependencies.
 
 Current AppPortal surfaces:
 
@@ -139,12 +139,14 @@ openntx capture report example-app
 openntx capture status example-app
 openntx capture snapshot-before example-app --json
 openntx capture diff example-app --json
-openntx package example-app
+openntx package build example-app
+openntx package build example-app --yes
+openntx package build example-app --output dist --version 1.0.0
 openntx remove example-app
 openntx doctor ~/Downloads/setup.exe
 ```
 
-V0.8 commands produce validation, manifest generation, local registry plan writing, desktop launcher writing, AppPortal registry UI, run-plan logs, installer capture snapshot/diff, and planning output. They do not execute Windows binaries.
+V0.9 commands produce validation, manifest generation, local registry plan writing, desktop launcher writing, AppPortal registry UI, run-plan logs, installer capture snapshot/diff, .deb packaging, and planning output. They do not execute Windows binaries.
 
 ## Development
 
@@ -178,7 +180,7 @@ python3 -m pip install --user jsonschema
 tools/dev-check.sh
 ```
 
-## How to Test V0.8
+## How to Test V0.9
 
 Run the required local checks:
 
@@ -225,9 +227,9 @@ Manual AppPortal flow:
 5. Use Desktop Launcher to create or remove a launcher after confirmation.
 6. Use Run Plan to verify the runtime placeholder and diagnostics log path.
 
-The mock install flow creates a temporary minimal PE fixture and demonstrates analysis, manifest metadata, registry plan writing, desktop launcher writing, and install planning only. OpenNTX V0.8 does not execute Windows binaries or installers.
+The mock install flow creates a temporary minimal PE fixture and demonstrates analysis, manifest metadata, registry plan writing, desktop launcher writing, and install planning only. OpenNTX V0.9 does not execute Windows binaries or installers.
 
-See [docs/testing.md](docs/testing.md) for the full test guide and V0.8 test boundaries.
+See [docs/testing.md](docs/testing.md) for the full test guide and V0.9 test boundaries.
 
 ## Roadmap Summary
 

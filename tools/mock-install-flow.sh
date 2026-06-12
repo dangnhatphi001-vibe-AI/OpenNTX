@@ -88,7 +88,7 @@ if [[ -n "${registered_app_id}" ]]; then
   XDG_DATA_HOME="${mock_xdg_data_home}" "${CARGO_BIN}" run -q -p openntx-cli -- remove "${registered_app_id}" --dry-run || true
 fi
 echo
-echo "+ openntx package ${app_id}"
-"${CARGO_BIN}" run -q -p openntx-cli -- package "${app_id}"
+echo "+ openntx package build ${app_id}"
+"${CARGO_BIN}" run -q -p openntx-cli -- package build "${app_id}"
 echo
 echo "Status: demonstration only. Runtime execution and installer capture are not implemented in V0.8."

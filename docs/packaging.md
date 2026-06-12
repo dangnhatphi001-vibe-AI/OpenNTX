@@ -29,6 +29,6 @@ Apps should share the runtime. They should not bundle the entire OpenNTX runtime
 
 Package removal should remove packaged files and desktop entries. User state should follow a documented policy and should not be deleted silently without user consent.
 
-## V0.5 Limitation
+## V0.6 Limitation
 
-V0.5 includes layout models only. It does not build `.deb` packages.
+V0.6 includes layout models only. It does not build `.deb` packages.

@@ -1,6 +1,6 @@
-# Testing OpenNTX V0.5
+# Testing OpenNTX V0.6
 
-OpenNTX V0.5 is a foundation release with real PE metadata analysis, manifest generation, local app registry plan writing, and desktop launcher writing. Tests verify static analysis, schemas, CLI planning, AppPortal mock output, core data models, PE headers, section tables, subsystem detection, entry point, image base, imported DLL names, generated manifest validation, registry directory creation, list/show, remove dry-run/delete behavior, and desktop launcher create/remove behavior. They do not verify Windows application execution because runtime execution is not implemented.
+OpenNTX V0.6 is a foundation release with real PE metadata analysis, manifest generation, local app registry plan writing, desktop launcher writing, and a registry-backed AppPortal TUI. Tests verify static analysis, schemas, CLI planning, core data models, PE headers, section tables, subsystem detection, entry point, image base, imported DLL names, generated manifest validation, registry directory creation, list/show, remove dry-run/delete behavior, desktop launcher create/remove behavior, registry summary fields used by AppPortal, and AppPortal confirmation parsing. They do not verify Windows application execution because runtime execution is not implemented.
 
 ## Prerequisites
 
@@ -82,9 +82,40 @@ cargo run -p openntx-cli -- remove <app-id> --yes
 cargo run -p openntx-appportal
 ```
 
-Expected result: a text UI/mock showing the home screen, drop zone, install wizard, app library, settings, and CLI bridge preview.
+Expected result: a terminal UI showing OpenNTX version, registered app count, runtime status, and the main action menu.
 
-## What V0.5 Tests Do Not Cover
+Manual AppPortal registry flow:
+
+```bash
+export XDG_DATA_HOME="$(mktemp -d)"
+cargo run -p openntx-cli -- install app.exe --write-plan
+cargo run -p openntx-appportal
+```
+
+Inside AppPortal:
+
+1. Choose Library.
+2. Select the registered app by number.
+3. Review App Details.
+4. Choose Run plan and verify it reports runtime execution is not implemented.
+5. Choose Create desktop launcher and confirm writing.
+6. Return to details and verify desktop status changes to present.
+7. Choose Remove desktop launcher and confirm removal.
+8. Choose Dry-run remove app and verify no files are deleted.
+9. Choose Delete and type the app id exactly to remove the registry entry.
+
+Manual CLI compatibility checks:
+
+```bash
+openntx list
+openntx show <app-id>
+openntx desktop create <app-id> --yes
+gtk-launch openntx-<app-id>
+```
+
+`gtk-launch` should only reach `openntx run <app-id>`, which remains a dry-run runtime placeholder.
+
+## What V0.6 Tests Do Not Cover
 
 - Windows process execution.
 - Installer execution.

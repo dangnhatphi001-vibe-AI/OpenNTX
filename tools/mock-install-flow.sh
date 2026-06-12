@@ -91,4 +91,4 @@ echo
 echo "+ openntx package ${app_id}"
 "${CARGO_BIN}" run -q -p openntx-cli -- package "${app_id}"
 echo
-echo "Status: demonstration only. Runtime execution and installer capture are not implemented in V0.5."
+echo "Status: demonstration only. Runtime execution and installer capture are not implemented in V0.6."

@@ -48,6 +48,10 @@ pub struct RegisteredApp {
     pub name: String,
     pub install_mode: String,
     pub architecture: String,
+    pub sandbox_profile: String,
+    pub executable_path: String,
+    pub imported_dll_count: usize,
+    pub status: String,
     pub desktop_launcher_exists: bool,
     pub manifest_path: PathBuf,
 }
@@ -223,6 +227,10 @@ impl AppRegistry {
                 name: manifest.name,
                 install_mode: manifest.install_mode,
                 architecture: manifest.architecture,
+                sandbox_profile: manifest.sandbox.profile,
+                executable_path: manifest.executable.path,
+                imported_dll_count: manifest.diagnostics.imported_dlls.len(),
+                status: "registered / analysis-only".to_string(),
                 desktop_launcher_exists,
                 manifest_path,
             });

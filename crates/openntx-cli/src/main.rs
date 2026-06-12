@@ -7,7 +7,7 @@ use std::process::ExitCode;
 #[derive(Debug, Parser)]
 #[command(name = "openntx")]
 #[command(version)]
-#[command(about = "OpenNTX V0.5 CLI foundation")]
+#[command(about = "OpenNTX V0.6 CLI foundation")]
 struct Cli {
     #[command(subcommand)]
     command: commands::Commands,

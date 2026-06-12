@@ -41,6 +41,12 @@ fn registry_lists_and_loads_registered_apps() {
     assert_eq!(apps.len(), 1);
     assert_eq!(apps[0].app_id, "list-app");
     assert_eq!(apps[0].install_mode, "portable");
+    assert_eq!(apps[0].architecture, "x86_64");
+    assert_eq!(apps[0].sandbox_profile, "standard");
+    assert_eq!(apps[0].executable_path, "C:/Example/App.exe");
+    assert_eq!(apps[0].imported_dll_count, 0);
+    assert_eq!(apps[0].status, "registered / analysis-only");
+    assert!(!apps[0].desktop_launcher_exists);
 
     let loaded = registry.load_manifest("list-app").expect("show manifest");
     assert_eq!(loaded.name, "List App");
@@ -101,6 +107,9 @@ fn desktop_create_and_remove_support_dry_run_and_write() {
         .expect("desktop write should succeed");
     assert!(written.written);
     assert!(written.desktop_entry_path.is_file());
+    let apps = registry.list_apps().expect("list apps after desktop write");
+    assert_eq!(apps.len(), 1);
+    assert!(apps[0].desktop_launcher_exists);
 
     let remove_dry_run = registry
         .remove_desktop_entry("desktop-app", DesktopMode::DryRun)

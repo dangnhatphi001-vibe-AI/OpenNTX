@@ -2,26 +2,34 @@ use openntx_core::registry::RegisteredApp;
 
 pub fn render(apps: &[RegisteredApp]) -> String {
     let mut lines = vec![
-        "App Library".to_string(),
-        "- List installed OpenNTX apps".to_string(),
-        "- Run".to_string(),
-        "- Create Launcher".to_string(),
-        "- Settings".to_string(),
-        "- Repair".to_string(),
-        "- Package".to_string(),
-        "- Remove".to_string(),
+        "OpenNTX App Library".to_string(),
+        "-------------------".to_string(),
+        "Select a registered app by number to view details.".to_string(),
         "".to_string(),
-        "V0.5 status: reads registered apps from the local OpenNTX app registry.".to_string(),
     ];
 
     if apps.is_empty() {
-        lines.push("- Registered apps: none".to_string());
+        lines.push("No registered apps found.".to_string());
+        lines.push(
+            "Use Install Plan to register an analyzed PE/EXE without executing it.".to_string(),
+        );
     } else {
-        lines.push("- Registered apps:".to_string());
-        for app in apps {
+        for (index, app) in apps.iter().enumerate() {
             lines.push(format!(
-                "  - {} | {} | {} | {}",
-                app.app_id, app.name, app.install_mode, app.architecture
+                "[{}] {} | {} | {} | {} | sandbox={} | dlls={} | {} | {}",
+                index + 1,
+                app.name,
+                app.app_id,
+                app.architecture,
+                app.install_mode,
+                app.sandbox_profile,
+                app.imported_dll_count,
+                if app.desktop_launcher_exists {
+                    "desktop=present"
+                } else {
+                    "desktop=missing"
+                },
+                app.status
             ));
         }
     }

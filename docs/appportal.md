@@ -2,66 +2,125 @@
 
 AppPortal is the user-friendly frontend for OpenNTX. It is not the runtime and must not contain compatibility-layer logic.
 
-V0.5 provides a lightweight TUI/mock so the project can stay buildable without requiring GTK4 or libadwaita development packages.
-
-## Home
-
-- Large drop area: "Drop a Windows .exe installer here".
-- "Choose EXE" action.
-- Recent apps list.
-- Security reminder.
-
-## File Analysis
-
-After selecting an EXE, AppPortal should show:
-
-- file name
-- detected type
-- architecture
-- generated manifest plan
-- recommended action
-- security warning
-
-Recommended actions:
-
-- Run Once
-- Install App
-- Package to DEB
-
-## Install Wizard
-
-1. Analyze.
-2. Generate manifest.
-3. Review sandbox permissions.
-4. Create launcher plan.
-5. Run installer capture in a future module.
-6. Select main executable after future capture.
-7. Done.
-
-## App Library
-
-The app library should list installed OpenNTX apps with actions:
-
-- Run
-- Create Launcher
-- Settings
-- Repair
-- Package
-- Remove
-
-V0.5 AppPortal mock reads registered apps from:
+V0.6 provides a lightweight terminal UI that reads the real OpenNTX app registry from:
 
 ```text
 ~/.local/share/openntx/apps/
 ```
 
+It does not run EXE files, run installers, or call external compatibility tools.
+
+## Home
+
+The home screen shows:
+
+- OpenNTX version.
+- Registered app count.
+- Runtime status: not implemented yet.
+- Actions for Library, Analyze EXE, Install Plan, Desktop Launcher, Settings, and Quit.
+
+## App Library
+
+The library lists registered apps with:
+
+- app name
+- app id
+- architecture
+- install mode
+- sandbox profile
+- imported DLL count
+- desktop launcher status
+- registry status
+
+Selecting an app opens App Details.
+
+## App Details
+
+App Details shows:
+
+- app id
+- name
+- architecture
+- install mode
+- executable path
+- manifest path
+- sandbox profile
+- imported DLL count
+- desktop entry path
+- desktop status
+- runtime status
+
+Available actions:
+
+- Run plan.
+- Create desktop launcher.
+- Remove desktop launcher.
+- Dry-run remove app.
+- Remove app with explicit app-id confirmation.
+- Back.
+
+Run plan remains honest: runtime execution is not implemented in V0.6.
+
+## Analyze EXE
+
+The Analyze EXE flow asks for a file path, runs the OpenNTX PE analyzer, and shows:
+
+- PE format
+- architecture
+- subsystem
+- imported DLL count
+- suggested install mode
+- analysis-only status
+
+The user may preview the generated manifest JSON or write an install plan after confirmation.
+
+## Install Plan
+
+The Install Plan flow:
+
+1. Asks for an EXE path.
+2. Analyzes PE metadata.
+3. Generates an OpenNTX manifest.
+4. Shows the planned registry paths.
+5. Requires confirmation before writing.
+6. Writes `manifest.json`, `install-plan.json`, `metadata.json`, `drive_c/`, `registry/`, and `logs/`.
+
+No installer is executed.
+
+## Desktop Launcher
+
+The Desktop Launcher flow uses the same core API as the CLI:
+
+- create launcher dry-run first
+- require confirmation before writing
+- remove launcher only after confirmation
+
+Desktop entries are written to:
+
+```text
+~/.local/share/applications/openntx-<app-id>.desktop
+```
+
+The generated `Exec` line calls:
+
+```text
+openntx run <app-id>
+```
+
+`openntx run` still produces a dry-run runtime plan.
+
 ## Settings
+
+Settings shows:
 
 - default sandbox profile
 - runtime backend
-- compatibility database setting
-- diagnostics and logs
+- manifest generation status
+- compatibility database status
+- app registry path
+- desktop entry path
+- diagnostics/log path
 
 ## Background Services
 
-V0.5 does not require a heavy background daemon. Future background services must have a documented reason, narrow permissions, and clear diagnostics.
+V0.6 does not require a heavy background daemon. Future background services must have a documented reason, narrow permissions, and clear diagnostics.

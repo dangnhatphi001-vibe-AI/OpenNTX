@@ -4,6 +4,7 @@ All notable changes to OpenNTX will be documented in this file.
 
 ## Unreleased
 
+- Add V0.6 registry-backed AppPortal TUI with real app library, app details, PE analysis, install-plan writing, desktop launcher actions, dry-run run plan, and confirmed app removal.
 - Add V0.5 desktop launcher writer with `openntx desktop create/remove`, `install --write-plan --desktop`, launcher status in list/show, and desktop create/remove tests.
 - Add V0.4 app registry and install plan writer with `openntx install --write-plan`, `openntx list`, `openntx show`, and confirmed/dry-run remove behavior.
 - Add V0.3 manifest generation from PE analysis, including `openntx manifest generate`, JSON output, output-file writing, install dry-run manifest planning, generated manifest diagnostics metadata, and a generated-from-PE example.
@@ -11,6 +12,15 @@ All notable changes to OpenNTX will be documented in this file.
 - Add V0.1.1 polish: CI workflow, README badges, GitHub issue and pull request templates, architecture diagram, testing guide, and screenshots placeholder.
 - Add V0.1 foundation documentation, schemas, examples, Rust workspace, CLI skeleton, core models, AppPortal mock, and development scripts.
 - Add source-available noncommercial licensing and commercial-license terms.
+
+## 0.6.0 - AppPortal Registry UI
+
+- Read registered apps directly from the OpenNTX app registry.
+- Show app details, sandbox profile, imported DLL count, manifest path, executable path, and desktop status.
+- Add AppPortal Analyze EXE and Install Plan flows backed by core PE analysis and manifest generation.
+- Add AppPortal desktop launcher create/remove actions with confirmation.
+- Add AppPortal run-plan placeholder without executing Windows binaries.
+- Add confirmed app removal from AppPortal.
 
 ## 0.5.0 - Desktop Launcher Writer
 

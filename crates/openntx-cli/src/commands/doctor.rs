@@ -24,7 +24,7 @@ pub fn run(target: &str) -> Result<()> {
             "Manifest",
             "expected under ~/.local/share/openntx/apps/<app-id>/manifest.json",
         );
-        output::field("Runtime", "not implemented in V0.5");
+        output::field("Runtime", "not implemented in V0.6");
     } else {
         return Err(OpenNtxError::InvalidInput(format!(
             "target is not an existing file or valid app id: {target}"

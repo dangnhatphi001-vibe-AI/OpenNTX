@@ -1,16 +1,19 @@
-pub fn render() -> String {
+pub fn analyze_flow_intro() -> String {
     [
-        "Install Wizard",
-        "1. Analyze EXE",
-        "2. Generate manifest",
-        "3. Review sandbox",
-        "4. Create launcher plan",
-        "5. Optionally write .desktop launcher",
-        "6. Capture install remains a future module",
-        "7. Select main executable after future capture",
-        "8. Done",
-        "",
-        "V0.5 status: mock only. Registry plan and launcher writing are available; installer execution and capture are not implemented.",
+        "OpenNTX Analyze EXE",
+        "-------------------",
+        "Enter a Windows PE/EXE path to inspect metadata.",
+        "No Windows binary will be executed.",
+    ]
+    .join("\n")
+}
+
+pub fn install_plan_intro() -> String {
+    [
+        "OpenNTX Install Plan",
+        "--------------------",
+        "Enter a Windows PE/EXE path to generate and optionally write an OpenNTX app registry entry.",
+        "This creates metadata only and does not run installers.",
     ]
     .join("\n")
 }

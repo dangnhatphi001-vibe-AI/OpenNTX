@@ -2,12 +2,13 @@
 
 OpenNTX is ambitious but must remain honest about what is implemented.
 
-## Current V0.5 Status
+## Current V0.6 Status
 
 - Real PE analyzer implemented.
 - Manifest generation from PE metadata implemented.
 - Local app registry and install plan writer implemented.
 - Desktop launcher writer implemented.
+- AppPortal reads the real local app registry and manages basic analysis-only actions.
 - Windows runtime execution is not implemented.
 - Installer execution and capture remain future modules.
 
@@ -19,7 +20,7 @@ OpenNTX is ambitious but must remain honest about what is implemented.
 - Capture report schema.
 - Compatibility profile schema.
 - CLI skeleton.
-- AppPortal mock.
+- AppPortal foundation.
 - Core models.
 - Basic tests.
 
@@ -97,7 +98,7 @@ OpenNTX is ambitious but must remain honest about what is implemented.
 
 ## Next Work Plan
 
-1. Connect AppPortal file picker/drop flow to analyze, manifest generation, registry plan writing, and desktop launcher commands.
+1. Add a more ergonomic AppPortal file picker/drop flow while keeping the terminal UI lightweight.
 2. Implement dry-run installer capture report generation.
 3. Implement real filesystem diff capture in a temporary directory.
 4. Implement packaging prototype for `.deb` layout.

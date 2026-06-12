@@ -1,6 +1,6 @@
 # Architecture Diagram
 
-OpenNTX is core-first. The GUI is a frontend. Runtime execution is not implemented in V0.5.
+OpenNTX is core-first. The GUI is a frontend. Runtime execution is not implemented in V0.6.
 
 ```text
                                   Linux Desktop
@@ -14,7 +14,7 @@ OpenNTX is core-first. The GUI is a frontend. Runtime execution is not implement
 
 User input
   |
-  +-- drag/drop EXE --> AppPortal TUI/mock ----------------+
+  +-- terminal input --> AppPortal registry TUI -----------+
   |                                                        |
   +-- CLI command ----> openntx analyze/install/run -------+
                                                            |
@@ -35,7 +35,7 @@ User input
                 |                          |                                           |
                 v                          v                                           v
       NotImplementedBackend       ExternalCompatibilityBackend                FutureNativeBackend
-            V0.5 only                 future placeholder                  future PE/NT/Win32 research
+            V0.6 only                 future placeholder                  future PE/NT/Win32 research
                 |
                 v
        dry-run plan / clear error
@@ -56,6 +56,6 @@ User input
 ~/.local/share/icons/hicolor/
 ```
 
-## V0.5 Boundary
+## V0.6 Boundary
 
-V0.5 validates inputs, parses PE metadata, generates manifests, writes app registry plans, writes desktop launchers, and tests the project foundation. It does not execute Windows binaries or installers.
+V0.6 validates inputs, parses PE metadata, generates manifests, writes app registry plans, writes desktop launchers, exposes a registry-backed AppPortal TUI, and tests the project foundation. It does not execute Windows binaries or installers.

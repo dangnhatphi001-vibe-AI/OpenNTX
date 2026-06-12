@@ -138,7 +138,13 @@
       "required": ["log_level", "crash_reports"],
       "properties": {
         "log_level": { "type": "string", "enum": ["error", "warn", "info", "debug", "trace"] },
-        "crash_reports": { "type": "boolean" }
+        "crash_reports": { "type": "boolean" },
+        "imported_dlls": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "entry_point_rva": { "type": "string" },
+        "image_base": { "type": "string" }
       }
     }
   }

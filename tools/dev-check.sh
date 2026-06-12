@@ -37,6 +37,7 @@ except Exception:
 pairs = [
     ("schemas/app-manifest.schema.json", "examples/manifests/portable-app.openntx.json"),
     ("schemas/app-manifest.schema.json", "examples/manifests/captured-installer.openntx.json"),
+    ("schemas/app-manifest.schema.json", "examples/manifests/generated-from-pe.openntx.json"),
     ("schemas/capture-report.schema.json", "examples/capture-reports/example-capture-report.json"),
 ]
 

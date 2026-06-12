@@ -2,6 +2,14 @@
 
 OpenNTX is ambitious but must remain honest about what is implemented.
 
+## Current V0.4 Status
+
+- Real PE analyzer implemented.
+- Manifest generation from PE metadata implemented.
+- Local app registry and install plan writer implemented.
+- Windows runtime execution is not implemented.
+- Installer execution and capture remain future modules.
+
 ## Phase 0: Concept and Repository Foundation
 
 - Source-available project structure.
@@ -16,14 +24,15 @@ OpenNTX is ambitious but must remain honest about what is implemented.
 
 ## Phase 1: PE Analyzer and Manifest Generator
 
-- Read DOS header.
-- Read PE signature.
-- Read COFF header.
-- Read optional header.
-- Detect machine architecture.
-- Detect subsystem type.
-- Parse imported DLL names when simple and safe.
-- Generate initial app manifest from PE metadata.
+- Implemented in V0.2/V0.3 for analysis-only metadata flows.
+- Reads DOS header.
+- Reads PE signature.
+- Reads COFF header.
+- Reads optional header.
+- Detects machine architecture.
+- Detects subsystem type.
+- Parses imported DLL names when simple and safe.
+- Generates initial app manifest from PE metadata.
 
 ## Phase 2: AppPortal Drag-and-Drop Install Flow Mock
 
@@ -31,6 +40,7 @@ OpenNTX is ambitious but must remain honest about what is implemented.
 - Drag/drop and file picker.
 - Analysis result screen.
 - Install wizard screens.
+- Registered app library backed by local app registry.
 - Security prompts.
 
 ## Phase 3: Desktop Integration and Launcher Generation
@@ -86,13 +96,10 @@ OpenNTX is ambitious but must remain honest about what is implemented.
 
 ## Next Work Plan
 
-1. Implement a real PE analyzer for DOS header, PE signature, COFF header, optional header, machine architecture, subsystem type, and simple imported DLL names.
-2. Implement manifest generation from PE analysis.
-3. Implement desktop entry generation from manifest.
-4. Connect AppPortal file picker/drop flow to the analyze command.
-5. Implement dry-run installer plan.
-6. Implement capture report generator mock.
-7. Implement real filesystem diff capture in a temporary directory.
-8. Implement packaging prototype for `.deb` layout.
-9. Implement runtime backend interface with NotImplementedBackend, ExternalCompatibilityBackend, and FutureNativeBackend.
-10. Start a research branch for actual PE loading and NT runtime concepts.
+1. Implement desktop entry writing from registered manifests.
+2. Connect AppPortal file picker/drop flow to analyze, manifest generation, and registry plan writing commands.
+3. Implement dry-run installer capture report generation.
+4. Implement real filesystem diff capture in a temporary directory.
+5. Implement packaging prototype for `.deb` layout.
+6. Expand compatibility profile matching from generated manifest metadata.
+7. Start a research branch for actual PE loading and NT runtime concepts.

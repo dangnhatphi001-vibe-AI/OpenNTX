@@ -26,7 +26,44 @@ Default user manifest path:
 - `audio`: audio backend preference.
 - `desktop`: Linux launcher and menu metadata.
 - `packaging`: future package metadata.
-- `diagnostics`: logging and crash report preferences.
+- `diagnostics`: logging, crash report preferences, and optional PE-derived metadata such as imported DLL names, entry point RVA, and image base.
+
+## V0.4 Generation
+
+OpenNTX V0.4 can generate a manifest from PE analysis:
+
+```bash
+openntx manifest generate app.exe
+openntx manifest generate app.exe --json
+openntx manifest generate app.exe --output /tmp/app.openntx.json
+```
+
+Generated manifests are analysis-only metadata. The command does not run the EXE, does not run installers, and does not invoke external compatibility tools.
+
+Generation rules:
+
+- installer-looking filenames generate `install_mode = "captured"`.
+- Windows GUI executables generate `install_mode = "captured"` as a future installer/capture-oriented plan.
+- console or portable-looking executables generate `install_mode = "portable"`.
+- imported DLL names are stored in `diagnostics.imported_dlls` when available.
+- entry point RVA and image base are stored in diagnostics when available.
+- sandbox defaults use the standard profile with network/documents/downloads set to ask and home/removable drives denied.
+
+## V0.4 Registry Writes
+
+`openntx install app.exe --write-plan` writes:
+
+```text
+~/.local/share/openntx/apps/<app-id>/
+  manifest.json
+  install-plan.json
+  metadata.json
+  drive_c/
+  registry/
+  logs/
+```
+
+This is still metadata and directory preparation only. No Windows code is executed.
 
 ## Policy
 

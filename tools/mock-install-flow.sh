@@ -4,6 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 app_id="${2:-example-app}"
+mock_xdg_data_home="$(mktemp -d)"
 
 CARGO_BIN="${CARGO:-cargo}"
 if ! command -v "${CARGO_BIN}" >/dev/null 2>&1; then
@@ -52,7 +53,7 @@ with open(path, "wb") as handle:
 PY
 fi
 
-trap 'if [[ -n "${cleanup_input}" ]]; then rm -f "${cleanup_input}"; fi' EXIT
+trap 'if [[ -n "${cleanup_input}" ]]; then rm -f "${cleanup_input}"; fi; rm -rf "${mock_xdg_data_home}"' EXIT
 
 echo "OpenNTX mock install flow"
 echo "Input: ${input}"
@@ -60,10 +61,28 @@ echo
 echo "+ openntx analyze ${input}"
 "${CARGO_BIN}" run -q -p openntx-cli -- analyze "${input}" || true
 echo
+echo "+ openntx manifest generate ${input}"
+"${CARGO_BIN}" run -q -p openntx-cli -- manifest generate "${input}" || true
+echo
 echo "+ openntx install ${input}"
 "${CARGO_BIN}" run -q -p openntx-cli -- install "${input}" || true
+echo
+echo "+ openntx install ${input} --write-plan"
+XDG_DATA_HOME="${mock_xdg_data_home}" "${CARGO_BIN}" run -q -p openntx-cli -- install "${input}" --write-plan || true
+registered_app_id="$(XDG_DATA_HOME="${mock_xdg_data_home}" "${CARGO_BIN}" run -q -p openntx-cli -- list | awk -F'[:|]' '/^App:/ {gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2; exit}')"
+echo
+echo "+ openntx list"
+XDG_DATA_HOME="${mock_xdg_data_home}" "${CARGO_BIN}" run -q -p openntx-cli -- list || true
+if [[ -n "${registered_app_id}" ]]; then
+  echo
+  echo "+ openntx show ${registered_app_id}"
+  XDG_DATA_HOME="${mock_xdg_data_home}" "${CARGO_BIN}" run -q -p openntx-cli -- show "${registered_app_id}" || true
+  echo
+  echo "+ openntx remove ${registered_app_id} --dry-run"
+  XDG_DATA_HOME="${mock_xdg_data_home}" "${CARGO_BIN}" run -q -p openntx-cli -- remove "${registered_app_id}" --dry-run || true
+fi
 echo
 echo "+ openntx package ${app_id}"
 "${CARGO_BIN}" run -q -p openntx-cli -- package "${app_id}"
 echo
-echo "Status: demonstration only. Runtime execution and installer capture are not implemented in V0.2."
+echo "Status: demonstration only. Runtime execution and installer capture are not implemented in V0.4."

@@ -23,6 +23,7 @@ fn repository_examples_validate() {
     for file_name in [
         "portable-app.openntx.json",
         "captured-installer.openntx.json",
+        "generated-from-pe.openntx.json",
     ] {
         let path = manifest_dir.join(file_name);
         let bytes = std::fs::read(&path).expect("example manifest should be readable");

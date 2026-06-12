@@ -1,6 +1,6 @@
 # Runtime Design
 
-OpenNTX V0.2 does not implement a Windows runtime. This document defines future research modules.
+OpenNTX V0.4 does not implement a Windows runtime. This document defines future research modules.
 
 ## Future Layers
 
@@ -21,7 +21,7 @@ The core exposes runtime backends through explicit planning and execution APIs.
 
 Initial backend placeholders:
 
-- `NotImplementedBackend`: V0.2 default.
+- `NotImplementedBackend`: V0.4 default.
 - `ExternalCompatibilityBackend`: future bridge for external compatibility engines.
 - `FutureNativeBackend`: future OpenNTX PE/NT/Win32 research backend.
 

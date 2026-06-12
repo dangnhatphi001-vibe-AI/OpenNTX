@@ -15,7 +15,7 @@ Installer Capture Mode is the planned process for turning a Windows installer in
 9. Detect shortcuts.
 10. Identify candidate main executables.
 11. Generate a capture report.
-12. Generate an app manifest.
+12. Generate or refine an app manifest.
 13. Generate a Linux launcher.
 14. Optionally package the captured app into a `.deb`.
 
@@ -33,6 +33,6 @@ Capture reports are structured JSON documents containing:
 - warnings
 - errors
 
-## V0.2 Limitation
+## V0.4 Limitation
 
-V0.2 only models capture plans and reports. It does not execute installers or perform real filesystem/registry diff capture.
+V0.4 can generate an initial manifest from PE metadata before capture. It still does not execute installers or perform real filesystem/registry diff capture.

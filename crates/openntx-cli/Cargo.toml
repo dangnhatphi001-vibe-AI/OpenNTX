@@ -15,3 +15,4 @@ path = "src/main.rs"
 [dependencies]
 clap = { workspace = true }
 openntx-core = { path = "../openntx-core" }
+serde_json = { workspace = true }

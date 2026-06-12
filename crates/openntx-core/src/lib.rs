@@ -7,6 +7,7 @@ pub mod manifest;
 pub mod packaging;
 pub mod paths;
 pub mod pe;
+pub mod registry;
 pub mod runtime;
 pub mod sandbox;
 

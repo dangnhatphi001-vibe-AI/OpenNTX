@@ -1,5 +1,6 @@
 use crate::bridge::cli_bridge::CliBridge;
 use crate::ui::{app_library, drop_zone, home, install_wizard, settings};
+use openntx_core::registry::AppRegistry;
 
 #[derive(Debug, Default)]
 pub struct AppPortalApp {
@@ -14,7 +15,10 @@ impl AppPortalApp {
         println!();
         println!("{}", install_wizard::render());
         println!();
-        println!("{}", app_library::render());
+        let registered_apps = AppRegistry::from_env()
+            .and_then(|registry| registry.list_apps())
+            .unwrap_or_default();
+        println!("{}", app_library::render(&registered_apps));
         println!();
         println!("{}", settings::render());
         println!();

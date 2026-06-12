@@ -1,19 +1,18 @@
 {
   "schema_version": "0.1.0",
-  "app_id": "example-app",
-  "name": "Example Windows App",
-  "version": "1.0.0",
+  "app_id": "tlauncher-installer-1-9-5-1-example",
+  "name": "TLauncher Installer 1.9.5.1",
   "source": {
     "type": "installer",
-    "original_file": "setup.exe",
+    "original_file": "TLauncher-Installer-1.9.5.1.exe",
     "sha256": "placeholder"
   },
   "executable": {
-    "path": "C:/Program Files/Example/App.exe",
+    "path": "/home/user/Downloads/TLauncher-Installer-1.9.5.1.exe",
     "arguments": [],
-    "working_directory": "C:/Program Files/Example"
+    "working_directory": "/home/user/Downloads"
   },
-  "architecture": "x86_64",
+  "architecture": "x86",
   "install_mode": "captured",
   "windows_compatibility": {
     "version": "windows10",
@@ -49,13 +48,13 @@
   },
   "desktop": {
     "create_launcher": true,
-    "name": "Example Windows App",
-    "icon": "example-app",
+    "name": "TLauncher Installer 1.9.5.1",
+    "icon": "tlauncher-installer-1-9-5-1-example",
     "categories": ["Utility"]
   },
   "packaging": {
-    "deb_package": true,
-    "package_name": "openntx-example-app"
+    "deb_package": false,
+    "package_name": "openntx-tlauncher-installer-1-9-5-1-example"
   },
   "diagnostics": {
     "log_level": "info",
@@ -64,7 +63,7 @@
       "KERNEL32.dll",
       "USER32.dll"
     ],
-    "entry_point_rva": "0x00001000",
-    "image_base": "0x0000000140000000"
+    "entry_point_rva": "0x00001010",
+    "image_base": "0x0000000000400000"
   }
 }

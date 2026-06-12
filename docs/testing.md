@@ -1,6 +1,6 @@
-# Testing OpenNTX V0.2
+# Testing OpenNTX V0.4
 
-OpenNTX V0.2 is a foundation release with real PE metadata analysis. Tests verify static analysis, schemas, CLI planning, AppPortal mock output, core data models, PE headers, section tables, subsystem detection, entry point, image base, and imported DLL names. They do not verify Windows application execution because runtime execution is not implemented.
+OpenNTX V0.4 is a foundation release with real PE metadata analysis, manifest generation, and local app registry plan writing. Tests verify static analysis, schemas, CLI planning, AppPortal mock output, core data models, PE headers, section tables, subsystem detection, entry point, image base, imported DLL names, generated manifest validation, registry directory creation, list/show, and remove dry-run/delete behavior. They do not verify Windows application execution because runtime execution is not implemented.
 
 ## Prerequisites
 
@@ -48,6 +48,29 @@ tools/mock-install-flow.sh
 
 The mock flow creates a temporary minimal PE fixture and demonstrates analysis and install planning. It does not run the EXE.
 
+Generate manifest metadata:
+
+```bash
+cargo run -p openntx-cli -- manifest generate app.exe
+cargo run -p openntx-cli -- manifest generate app.exe --json
+cargo run -p openntx-cli -- manifest generate app.exe --output /tmp/app.openntx.json
+```
+
+`--json` prints pretty JSON only, with no extra prose.
+
+Write a local registry plan without touching your real app registry:
+
+```bash
+export XDG_DATA_HOME="$(mktemp -d)"
+cargo run -p openntx-cli -- install app.exe --write-plan
+cargo run -p openntx-cli -- list
+cargo run -p openntx-cli -- show <app-id>
+cargo run -p openntx-cli -- remove <app-id> --dry-run
+cargo run -p openntx-cli -- remove <app-id> --yes
+```
+
+`openntx install app.exe` remains dry-run unless `--write-plan` is passed.
+
 ## AppPortal Smoke Test
 
 ```bash
@@ -56,7 +79,7 @@ cargo run -p openntx-appportal
 
 Expected result: a text UI/mock showing the home screen, drop zone, install wizard, app library, settings, and CLI bridge preview.
 
-## What V0.2 Tests Do Not Cover
+## What V0.4 Tests Do Not Cover
 
 - Windows process execution.
 - Installer execution.

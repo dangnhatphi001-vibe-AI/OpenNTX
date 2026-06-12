@@ -59,6 +59,9 @@
   },
   "diagnostics": {
     "log_level": "info",
-    "crash_reports": true
+    "crash_reports": true,
+    "imported_dlls": [],
+    "entry_point_rva": "0x00001000",
+    "image_base": "0x0000000000400000"
   }
 }

@@ -101,6 +101,12 @@ pub struct PackagingConfig {
 pub struct DiagnosticsConfig {
     pub log_level: String,
     pub crash_reports: bool,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub imported_dlls: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub entry_point_rva: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image_base: Option<String>,
 }
 
 impl AppManifest {
@@ -164,6 +170,9 @@ impl AppManifest {
             diagnostics: DiagnosticsConfig {
                 log_level: "info".to_string(),
                 crash_reports: true,
+                imported_dlls: Vec::new(),
+                entry_point_rva: None,
+                image_base: None,
             },
         }
     }

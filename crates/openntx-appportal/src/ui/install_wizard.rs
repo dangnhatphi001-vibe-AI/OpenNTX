@@ -1,15 +1,15 @@
 pub fn render() -> String {
     [
         "Install Wizard",
-        "1. Analyze",
-        "2. Choose install mode",
-        "3. Sandbox permissions",
-        "4. Run installer capture",
-        "5. Select main executable",
-        "6. Create launcher",
+        "1. Analyze EXE",
+        "2. Generate manifest",
+        "3. Review sandbox",
+        "4. Create launcher plan",
+        "5. Capture install remains a future module",
+        "6. Select main executable after future capture",
         "7. Done",
         "",
-        "V0.2 status: mock only. Installer execution and capture are not implemented.",
+        "V0.4 status: mock only. Registry plan writing is available; installer execution and capture are not implemented.",
     ]
     .join("\n")
 }

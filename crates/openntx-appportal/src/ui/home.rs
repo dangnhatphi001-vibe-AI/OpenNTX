@@ -7,6 +7,7 @@ pub fn render() -> String {
         "",
         "Actions:",
         "- Choose EXE",
+        "- Generate manifest",
         "- View recent apps",
         "- Open settings",
         "",

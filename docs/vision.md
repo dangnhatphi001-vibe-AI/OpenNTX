@@ -20,4 +20,4 @@ OpenNTX will only earn that experience by building core systems first:
 - Runtime backend abstraction.
 - Security and sandboxing from the start.
 
-V0.2 is still a foundation. It analyzes PE metadata but does not run arbitrary Windows applications.
+V0.4 is still a foundation. It analyzes PE metadata and generates manifests but does not run arbitrary Windows applications.

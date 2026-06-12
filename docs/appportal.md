@@ -2,7 +2,7 @@
 
 AppPortal is the user-friendly frontend for OpenNTX. It is not the runtime and must not contain compatibility-layer logic.
 
-V0.7 provides a lightweight terminal UI that reads the real OpenNTX app registry from:
+V0.8 provides a lightweight terminal UI that reads the real OpenNTX app registry from:
 
 ```text
 ~/.local/share/openntx/apps/
@@ -17,7 +17,7 @@ The home screen shows:
 - OpenNTX version.
 - Registered app count.
 - Runtime status: not implemented yet.
-- Actions for Library, Analyze EXE, Install Plan, Desktop Launcher, Settings, and Quit.
+- Actions for Library, Analyze EXE, Install Plan, Desktop Launcher, Capture, Settings, and Quit.
 
 ## App Library
 
@@ -55,11 +55,16 @@ Available actions:
 - Run plan.
 - Create desktop launcher.
 - Remove desktop launcher.
+- Capture: Snapshot Before.
+- Capture: Snapshot After.
+- Capture: Diff.
+- Capture: Report.
+- Capture: Status.
 - Dry-run remove app.
 - Remove app with explicit app-id confirmation.
 - Back.
 
-Run plan remains honest: runtime execution is not implemented in V0.7. AppPortal uses the same core run-plan logic as `openntx run <app-id>` and writes a diagnostics log under:
+Run plan remains honest: runtime execution is not implemented in V0.8. AppPortal uses the same core run-plan logic as `openntx run <app-id>` and writes a diagnostics log under:
 
 ```text
 ~/.local/state/openntx/logs/
@@ -115,6 +120,20 @@ openntx run <app-id> --notify
 
 `openntx run` still produces a dry-run runtime plan and writes diagnostics metadata.
 
+## Capture
+
+The Capture flow provides per-app installer capture snapshot/diff actions:
+
+- **Snapshot Before**: Snapshots the OpenNTX app directory (drive_c/, registry/, optional files) before a future/manual capture step.
+- **Snapshot After**: Snapshots the app directory after a future/manual capture step.
+- **Diff**: Computes filesystem diff between before/after snapshots.
+- **Report**: Generates a capture report from the diff.
+- **Status**: Shows which capture artifacts exist for the selected app.
+
+Capture is also accessible from the main menu as option [5].
+
+The AppPortal clearly states: "Installer execution is not implemented. Capture snapshots only inspect OpenNTX-managed app directories."
+
 ## Settings
 
 Settings shows:
@@ -129,4 +148,4 @@ Settings shows:
 
 ## Background Services
 
-V0.7 does not require a heavy background daemon. Future background services must have a documented reason, narrow permissions, and clear diagnostics.
+V0.8 does not require a heavy background daemon. Future background services must have a documented reason, narrow permissions, and clear diagnostics.

@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openntx.dev/schemas/capture-snapshot.schema.json",
+  "title": "OpenNTX Capture Snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "app_id",
+    "root",
+    "created_at",
+    "entries",
+    "errors"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "app_id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 80
+    },
+    "root": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "relative_path",
+          "kind",
+          "size"
+        ],
+        "properties": {
+          "relative_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "file",
+              "directory",
+              "symlink",
+              "other"
+            ]
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "modified_unix": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "readonly": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

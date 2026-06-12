@@ -1,6 +1,6 @@
-# Testing OpenNTX V0.7
+# Testing OpenNTX V0.8
 
-OpenNTX V0.7 is a foundation release with real PE metadata analysis, manifest generation, local app registry plan writing, desktop launcher writing, run-plan diagnostics, and a registry-backed AppPortal TUI. Tests verify static analysis, schemas, CLI planning, core data models, PE headers, section tables, subsystem detection, entry point, image base, imported DLL names, generated manifest validation, registry directory creation, list/show, remove dry-run/delete behavior, desktop launcher create/remove behavior, run-plan log writing, registry summary fields used by AppPortal, and AppPortal confirmation parsing. They do not verify Windows application execution because runtime execution is not implemented.
+OpenNTX V0.8 is a foundation release with real PE metadata analysis, manifest generation, local app registry plan writing, desktop launcher writing, run-plan diagnostics, installer capture snapshot/diff infrastructure, and a registry-backed AppPortal TUI. Tests verify static analysis, schemas, CLI planning, core data models, PE headers, section tables, subsystem detection, entry point, image base, imported DLL names, generated manifest validation, registry directory creation, list/show, remove dry-run/delete behavior, desktop launcher create/remove behavior, run-plan log writing, registry summary fields used by AppPortal, AppPortal confirmation parsing, capture snapshot creation, file created/modified/removed detection, directory created/removed detection, registry file change tracking, missing snapshot errors, capture report JSON validity, and symlink/path traversal safety. They do not verify Windows application execution because runtime execution is not implemented.
 
 ## Prerequisites
 
@@ -75,6 +75,21 @@ cargo run -p openntx-cli -- run <app-id> --json
 cargo run -p openntx-cli -- run <app-id> --notify
 cargo run -p openntx-cli -- remove <app-id> --dry-run
 cargo run -p openntx-cli -- remove <app-id> --yes
+```
+
+Capture CLI smoke tests:
+
+```bash
+openntx capture snapshot-before <app-id>
+openntx capture snapshot-after <app-id>
+openntx capture diff <app-id>
+openntx capture report <app-id>
+openntx capture status <app-id>
+openntx capture snapshot-before <app-id> --json
+openntx capture diff <app-id> --json
+ls ~/.local/share/openntx/apps/<app-id>/capture/
+cat ~/.local/share/openntx/apps/<app-id>/capture/capture-diff.json
+cat ~/.local/share/openntx/apps/<app-id>/capture/capture-report.json
 ```
 
 Install the CLI binary to `~/.cargo/bin/`:
@@ -156,7 +171,7 @@ Automated tests cover this in `manifest_generator_tests.rs`:
 - `cpu_z_like_gui_filename_is_consistent_run_once`
 - `installer_filename_is_consistent_captured_across_analyze_and_manifest`
 
-## What V0.7 Tests Do Not Cover
+## What V0.8 Tests Do Not Cover
 
 - Windows process execution.
 - Installer execution.

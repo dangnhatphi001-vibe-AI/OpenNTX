@@ -56,6 +56,10 @@ impl OpenNtxPaths {
     pub fn cache_for_app(&self, app_id: &str) -> PathBuf {
         self.cache_root.join(app_id)
     }
+
+    pub fn capture_dir(&self, app_id: &str) -> PathBuf {
+        self.app_dir(app_id).join("capture")
+    }
 }
 
 fn env_path(key: &str) -> Option<PathBuf> {

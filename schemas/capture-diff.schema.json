@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openntx.dev/schemas/capture-diff.schema.json",
+  "title": "OpenNTX Capture Diff",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "app_id",
+    "before_snapshot_at",
+    "after_snapshot_at",
+    "files_created",
+    "files_removed",
+    "files_modified",
+    "directories_created",
+    "directories_removed",
+    "symlinks_created",
+    "symlinks_removed",
+    "registry_files_changed",
+    "warnings",
+    "errors"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "app_id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 80
+    },
+    "before_snapshot_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "after_snapshot_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "files_created": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "relative_path",
+          "kind"
+        ],
+        "properties": {
+          "relative_path": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "before_size": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "after_size": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "before_sha256": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "after_sha256": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "files_removed": {
+      "type": "array",
+      "items": {
+        "$ref": "#/properties/files_created/items"
+      }
+    },
+    "files_modified": {
+      "type": "array",
+      "items": {
+        "$ref": "#/properties/files_created/items"
+      }
+    },
+    "directories_created": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "relative_path"
+        ],
+        "properties": {
+          "relative_path": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "directories_removed": {
+      "type": "array",
+      "items": {
+        "$ref": "#/properties/directories_created/items"
+      }
+    },
+    "symlinks_created": {
+      "type": "array",
+      "items": {
+        "$ref": "#/properties/directories_created/items"
+      }
+    },
+    "symlinks_removed": {
+      "type": "array",
+      "items": {
+        "$ref": "#/properties/directories_created/items"
+      }
+    },
+    "registry_files_changed": {
+      "type": "array",
+      "items": {
+        "$ref": "#/properties/files_created/items"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

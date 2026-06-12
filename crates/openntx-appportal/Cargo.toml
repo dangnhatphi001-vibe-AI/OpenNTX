@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 repository.workspace = true
-description = "Lightweight registry-backed AppPortal TUI for the OpenNTX source-available V0.7 foundation."
+description = "Lightweight registry-backed AppPortal TUI for the OpenNTX source-available V0.8 foundation."
 license-file = "../../LICENSE"
 
 [dependencies]

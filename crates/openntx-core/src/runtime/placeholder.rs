@@ -22,7 +22,7 @@ impl RuntimeBackend for NotImplementedBackend {
             app_id: manifest.app_id.clone(),
             executable: manifest.executable.path.clone(),
             implemented: false,
-            message: "Runtime execution is not implemented in V0.7. This command currently validates input and prepares a future execution plan.".to_string(),
+            message: "Runtime execution is not implemented in V0.8. This command currently validates input and prepares a future execution plan.".to_string(),
         }
     }
 
@@ -68,7 +68,7 @@ impl RuntimeBackend for FutureNativeBackend {
             executable: manifest.executable.path.clone(),
             implemented: false,
             message:
-                "Future native PE/NT/Win32 backend is a research module, not V0.7 functionality."
+                "Future native PE/NT/Win32 backend is a research module, not V0.8 functionality."
                     .to_string(),
         }
     }

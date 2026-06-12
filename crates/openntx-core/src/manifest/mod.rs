@@ -12,4 +12,4 @@ pub use model::{
     WindowsCompatibilityConfig,
 };
 pub use validate::validate_manifest;
-pub use writer::{read_manifest, write_manifest_pretty};
+pub use writer::{read_json_safe, read_manifest, write_manifest_pretty};

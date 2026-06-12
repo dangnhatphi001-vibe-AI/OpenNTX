@@ -31,9 +31,9 @@ fn run_plan_succeeds_even_without_notify_send() {
     assert!(report.log_path.is_some());
 }
 
-/// Verify that the run-plan report message contains the V0.7 status notice
+/// Verify that the run-plan report message contains the V0.8 status notice
 #[test]
-fn run_plan_message_mentions_v07_status() {
+fn run_plan_message_mentions_v08_status() {
     let registry = temp_registry();
     let manifest = fixture_manifest("msg-test-app");
     let install_plan = registry.build_install_plan(&manifest, None);
@@ -53,8 +53,8 @@ fn run_plan_message_mentions_v07_status() {
         "message should mention not implemented"
     );
     assert!(
-        report.message.contains("V0.7"),
-        "message should mention V0.7"
+        report.message.contains("V0.8"),
+        "message should mention V0.8"
     );
 }
 

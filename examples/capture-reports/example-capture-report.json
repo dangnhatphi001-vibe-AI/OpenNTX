@@ -1,31 +1,25 @@
 {
-  "schema_version": "0.1.0",
+  "schema_version": "0.2.0",
   "capture_id": "capture-example-app",
+  "app_id": "example-app-a1b2c3d4",
+  "app_name": "Example App",
   "input_installer": "setup.exe",
-  "started_at": "placeholder",
-  "finished_at": "placeholder",
-  "installer_exit_code": 0,
+  "started_at": "2026-01-01T00:00:00Z",
+  "finished_at": "2026-01-01T00:05:00Z",
   "files_created": [
-    "C:/Program Files/Example/App.exe"
+    "drive_c/Program Files/Example/App.exe"
   ],
   "files_modified": [],
+  "files_removed": [],
   "registry_keys_created": [
-    "HKCU/Software/Example"
+    "registry/user.reg"
   ],
   "registry_values_changed": [],
-  "shortcuts_detected": [
-    {
-      "name": "Example App",
-      "target": "C:/Program Files/Example/App.exe"
-    }
+  "shortcuts_detected": [],
+  "executable_candidates": [],
+  "warnings": [
+    "Capture snapshots only inspect OpenNTX-managed app directories. No installer is executed."
   ],
-  "executable_candidates": [
-    {
-      "path": "C:/Program Files/Example/App.exe",
-      "score": 0.95,
-      "reason": "Detected from installer shortcut"
-    }
-  ],
-  "warnings": [],
-  "errors": []
+  "errors": [],
+  "status": "analysis-only / no runtime execution"
 }

@@ -96,6 +96,14 @@ pub fn write_run_plan_log(path: &Path, report: &RunPlanReport) -> Result<()> {
     fs::write(path, json).map_err(|source| OpenNtxError::io(path, source))
 }
 
+pub fn utc_now_iso8601() -> String {
+    let unix = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    format_utc_timestamp(unix)
+}
+
 fn unix_now() -> Result<u64> {
     Ok(SystemTime::now()
         .duration_since(UNIX_EPOCH)

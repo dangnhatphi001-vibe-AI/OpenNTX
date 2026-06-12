@@ -7,42 +7,102 @@
   "required": [
     "schema_version",
     "capture_id",
+    "app_id",
+    "app_name",
     "input_installer",
     "started_at",
     "finished_at",
-    "installer_exit_code",
     "files_created",
     "files_modified",
+    "files_removed",
     "registry_keys_created",
     "registry_values_changed",
     "shortcuts_detected",
     "executable_candidates",
     "warnings",
-    "errors"
+    "errors",
+    "status"
   ],
   "properties": {
-    "schema_version": { "type": "string", "const": "0.1.0" },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
     "capture_id": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]{1,126}[a-z0-9]$"
     },
-    "input_installer": { "type": "string", "minLength": 1 },
-    "started_at": { "type": "string", "minLength": 1 },
-    "finished_at": { "type": "string", "minLength": 1 },
-    "installer_exit_code": { "type": "integer" },
-    "files_created": { "type": "array", "items": { "type": "string" } },
-    "files_modified": { "type": "array", "items": { "type": "string" } },
-    "registry_keys_created": { "type": "array", "items": { "type": "string" } },
-    "registry_values_changed": { "type": "array", "items": { "type": "string" } },
+    "app_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]-[0-9a-f]{8}$"
+    },
+    "app_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_installer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finished_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "installer_exit_code": {
+      "type": "integer"
+    },
+    "files_created": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "files_modified": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "files_removed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "registry_keys_created": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "registry_values_changed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "shortcuts_detected": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["name", "target"],
+        "required": [
+          "name",
+          "target"
+        ],
         "properties": {
-          "name": { "type": "string", "minLength": 1 },
-          "target": { "type": "string", "minLength": 1 }
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },
@@ -51,15 +111,65 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["path", "score", "reason"],
+        "required": [
+          "path",
+          "score",
+          "reason"
+        ],
         "properties": {
-          "path": { "type": "string", "minLength": 1 },
-          "score": { "type": "number", "minimum": 0, "maximum": 1 },
-          "reason": { "type": "string", "minLength": 1 }
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },
-    "warnings": { "type": "array", "items": { "type": "string" } },
-    "errors": { "type": "array", "items": { "type": "string" } }
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "analysis-only / no runtime execution",
+        "captured",
+        "error"
+      ]
+    },
+    "directories_created": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "directories_removed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "registry_files_changed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
   }
 }

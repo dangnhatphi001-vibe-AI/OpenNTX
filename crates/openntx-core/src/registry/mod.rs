@@ -216,9 +216,16 @@ impl AppRegistry {
                 continue;
             }
             let manifest_path = path.join("manifest.json");
-            if !manifest_path.exists() {
-                continue;
+
+            // Use symlink_metadata to reject symlinked manifest.json
+            let manifest_meta = match fs::symlink_metadata(&manifest_path) {
+                Ok(m) => m,
+                Err(_) => continue, // file doesn't exist or inaccessible
+            };
+            if manifest_meta.file_type().is_symlink() || !manifest_meta.is_file() {
+                continue; // skip apps with unsafe manifest
             }
+
             let manifest = read_manifest(&manifest_path)?;
             let app_id = manifest.app_id;
             let desktop_launcher_exists = self.paths.desktop_entry_path(&app_id).exists();

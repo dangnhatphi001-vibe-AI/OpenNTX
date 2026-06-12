@@ -22,7 +22,7 @@ The launcher should execute:
 openntx run <app-id> --notify
 ```
 
-V0.7 writes user launchers for registered apps through the CLI and AppPortal:
+V0.8 writes user launchers for registered apps through the CLI and AppPortal:
 
 ```bash
 openntx desktop create <app-id> --dry-run

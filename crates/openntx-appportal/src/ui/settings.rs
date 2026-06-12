@@ -12,7 +12,7 @@ pub fn render(paths: &OpenNtxPaths) -> String {
         format!("Desktop entries: {}", paths.desktop_entries_dir.display()),
         format!("Diagnostics/logs: {}", paths.logs_root.display()),
         String::new(),
-        "Runtime execution is not implemented in V0.7.".to_string(),
+        "Runtime execution is not implemented in V0.8.".to_string(),
     ]
     .join("\n")
 }

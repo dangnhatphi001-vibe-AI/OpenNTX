@@ -4,19 +4,29 @@ All notable changes to OpenNTX will be documented in this file.
 
 ## Unreleased
 
-- Fix V0.7 run-plan CLI: resolve stale binary issue where `--json`, `--notify`, `--no-log` flags were not recognized by the installed `openntx` binary.
-- Unify install-mode heuristic across `analyze`, `manifest generate`, and `install --write-plan` so non-installer GUI tools (like CPU-Z) consistently get `run-once`/`portable` instead of the previous inconsistent `captured`.
-- Add `target` and `timestamp` fields to run-plan reports.
-- Add `install_mode_reason` to PE analysis output and CLI `analyze` display.
-- Add tests for heuristic consistency, run-plan JSON round-trip, no-log behavior, desktop Exec `--notify`, notify-send safety, and V0.7 status messaging.
-- Update AppPortal run-plan screen with real app name, target, and timestamp.
-- Add V0.5 desktop launcher writer with `openntx desktop create/remove`, `install --write-plan --desktop`, launcher status in list/show, and desktop create/remove tests.
-- Add V0.4 app registry and install plan writer with `openntx install --write-plan`, `openntx list`, `openntx show`, and confirmed/dry-run remove behavior.
-- Add V0.3 manifest generation from PE analysis, including `openntx manifest generate`, JSON output, output-file writing, install dry-run manifest planning, generated manifest diagnostics metadata, and a generated-from-PE example.
-- Add V0.2 real PE analyzer metadata parsing for DOS header, PE signature, COFF header, optional header, machine architecture, subsystem, image kind, section table, entry point, image base, and imported DLL names.
-- Add V0.1.1 polish: CI workflow, README badges, GitHub issue and pull request templates, architecture diagram, testing guide, and screenshots placeholder.
-- Add V0.1 foundation documentation, schemas, examples, Rust workspace, CLI skeleton, core models, AppPortal mock, and development scripts.
-- Add source-available noncommercial licensing and commercial-license terms.
+- Harden manifest loading: reject symlinked `manifest.json` before reading content with clear "unsafe file" error.
+- Harden `list_apps`: skip apps with symlinked manifest instead of following symlink and failing with JSON parse error.
+- Add `read_json_safe` helper that uses `symlink_metadata()` to reject symlinks and non-regular files before reading.
+- Add security tests: symlinked manifest rejection for `load_manifest`, `list_apps`, `snapshot_before`, `capture_status`, and `read_json_safe`.
+- Each security probe test uses a fresh app registry so one corrupted probe does not affect the next.
+- Update manual security probe docs in `docs/installer-capture.md`.
+
+## 0.8.0 - Installer Capture Snapshot/Diff Infrastructure
+
+- Add `openntx capture snapshot-before <app-id>` to snapshot OpenNTX app directory state before installer execution.
+- Add `openntx capture snapshot-after <app-id>` to snapshot OpenNTX app directory state after installer execution.
+- Add `openntx capture diff <app-id>` to compute filesystem diff between before/after snapshots.
+- Add `openntx capture report <app-id>` to generate a capture report from the diff.
+- Add `openntx capture status <app-id>` to show capture state for a registered app.
+- Add core capture modules: `snapshot.rs`, `diff.rs`, `report_writer.rs` with reusable logic.
+- Snapshot entries include relative path, kind (file/directory/symlink/other), size, modified time, SHA256 hash, and readonly flag.
+- Diff results include files created/removed/modified, directories created/removed, registry files changed, warnings, and errors.
+- Capture reports extend the existing capture-report schema with `app_id`, `app_name`, `files_removed`, and `status` field.
+- All capture commands support `--json` for machine-readable output.
+- All capture commands fail gracefully if app ID is unknown or required snapshots are missing.
+- Update AppPortal with Capture menu option and per-app capture actions (Snapshot Before/After, Diff, Report, Status).
+- Add capture tests for snapshot creation, file created/modified/removed detection, directory created/removed detection, registry file change tracking, missing snapshot errors, report JSON validity, symlink/path traversal safety, and JSON round-trip.
+- V0.8 adds capture snapshot/diff infrastructure only. It does not run Windows installers yet.
 
 ## 0.7.0 - Run Plan UX and Diagnostics
 

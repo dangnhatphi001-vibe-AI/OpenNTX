@@ -2,7 +2,7 @@
 
 OpenNTX is ambitious but must remain honest about what is implemented.
 
-## Current V0.7 Status
+## Current V0.8 Status
 
 - Real PE analyzer implemented.
 - Manifest generation from PE metadata implemented.
@@ -11,8 +11,9 @@ OpenNTX is ambitious but must remain honest about what is implemented.
 - Run-plan diagnostics and default log writing implemented.
 - Unified install-mode heuristic across analyze, manifest generate, and install flows.
 - AppPortal reads the real local app registry and manages basic analysis-only actions.
+- Installer capture snapshot/diff infrastructure implemented (analysis-only, no installer execution).
 - Windows runtime execution is not implemented.
-- Installer execution and capture remain future modules.
+- Installer execution remains a future module.
 
 ## Phase 0: Concept and Repository Foundation
 
@@ -58,11 +59,11 @@ OpenNTX is ambitious but must remain honest about what is implemented.
 ## Phase 4: Installer Capture Prototype
 
 - Temporary install environment.
-- Filesystem snapshot and diff.
-- Registry overlay snapshot and diff.
+- Filesystem snapshot and diff. **(V0.8: snapshot/diff infrastructure for OpenNTX app directories)**
+- Registry overlay snapshot and diff. **(V0.8: registry file change tracking in diff)**
 - Shortcut detection.
 - Main executable candidate scoring.
-- Capture report generation.
+- Capture report generation. **(V0.8: analysis-only capture reports)**
 
 ## Phase 5: Runtime Backend Abstraction
 
@@ -101,8 +102,8 @@ OpenNTX is ambitious but must remain honest about what is implemented.
 ## Next Work Plan
 
 1. Add a more ergonomic AppPortal file picker/drop flow while keeping the terminal UI lightweight.
-2. Implement dry-run installer capture report generation.
-3. Implement real filesystem diff capture in a temporary directory.
+2. Implement real installer execution inside a controlled capture environment.
+3. Implement shortcut detection and executable candidate scoring from capture diffs.
 4. Implement packaging prototype for `.deb` layout.
 5. Expand compatibility profile matching from generated manifest metadata.
 6. Start a research branch for actual PE loading and NT runtime concepts.

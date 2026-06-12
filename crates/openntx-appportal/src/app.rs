@@ -1,5 +1,6 @@
 use crate::ui::{app_library, home, install_wizard, settings};
 use openntx_core::app_id::generate_app_id;
+use openntx_core::capture::CaptureRegistryService;
 use openntx_core::manifest::{
     generate_manifest_from_pe, AppManifest, GeneratedManifest, ManifestGenerationInput,
 };
@@ -43,7 +44,8 @@ impl AppPortalApp {
                 "a" | "2" => self.analyze_exe_screen()?,
                 "i" | "3" => self.install_plan_screen()?,
                 "d" | "4" => self.desktop_launcher_screen()?,
-                "s" | "5" => self.settings_screen()?,
+                "c" | "5" => self.capture_screen()?,
+                "s" | "6" => self.settings_screen()?,
                 "q" => break,
                 "" => {}
                 _ => pause("Unknown action.")?,
@@ -97,6 +99,15 @@ impl AppPortalApp {
                 }
                 value if value.eq_ignore_ascii_case("c") => self.create_desktop_screen(app_id)?,
                 value if value.eq_ignore_ascii_case("x") => self.remove_desktop_screen(app_id)?,
+                value if value.eq_ignore_ascii_case("1") => {
+                    self.capture_snapshot_before_screen(app_id)?
+                }
+                value if value.eq_ignore_ascii_case("2") => {
+                    self.capture_snapshot_after_screen(app_id)?
+                }
+                value if value.eq_ignore_ascii_case("3") => self.capture_diff_screen(app_id)?,
+                value if value.eq_ignore_ascii_case("4") => self.capture_report_screen(app_id)?,
+                value if value.eq_ignore_ascii_case("5") => self.capture_status_screen(app_id)?,
                 value if value.eq_ignore_ascii_case("d") => {
                     self.remove_app_dry_run_screen(app_id)?
                 }
@@ -223,6 +234,215 @@ impl AppPortalApp {
         pause("Press Enter to return.")
     }
 
+    fn capture_screen(&mut self) -> Result<()> {
+        loop {
+            let apps = self.registry.list_apps()?;
+            clear_screen();
+            println!("OpenNTX Capture");
+            println!("---------------");
+            println!("Installer execution is not implemented. Capture snapshots only inspect OpenNTX-managed app directories.");
+            println!();
+            if apps.is_empty() {
+                pause("No registered apps. Press Enter to return.")?;
+                return Ok(());
+            }
+            print_numbered_apps(&apps);
+
+            let input = prompt("Select app number or [B] Back")?;
+            if input.eq_ignore_ascii_case("b") {
+                return Ok(());
+            }
+            let Some(index) = parse_menu_index(&input, apps.len()) else {
+                pause("Invalid app selection.")?;
+                continue;
+            };
+            let app_id = apps[index].app_id.clone();
+            loop {
+                clear_screen();
+                println!("OpenNTX Capture for {}", app_id);
+                println!("--------------------------------");
+                println!("[1] Snapshot Before");
+                println!("[2] Snapshot After");
+                println!("[3] Diff");
+                println!("[4] Report");
+                println!("[5] Status");
+                println!("[B] Back");
+                match prompt("Select action")?.as_str() {
+                    value if value.eq_ignore_ascii_case("1") => {
+                        self.capture_snapshot_before_screen(&app_id)?
+                    }
+                    value if value.eq_ignore_ascii_case("2") => {
+                        self.capture_snapshot_after_screen(&app_id)?
+                    }
+                    value if value.eq_ignore_ascii_case("3") => {
+                        self.capture_diff_screen(&app_id)?
+                    }
+                    value if value.eq_ignore_ascii_case("4") => {
+                        self.capture_report_screen(&app_id)?
+                    }
+                    value if value.eq_ignore_ascii_case("5") => {
+                        self.capture_status_screen(&app_id)?
+                    }
+                    value if value.eq_ignore_ascii_case("b") => break,
+                    "" => {}
+                    _ => pause("Unknown capture action.")?,
+                }
+            }
+        }
+    }
+
+    fn capture_snapshot_before_screen(&self, app_id: &str) -> Result<()> {
+        let service = CaptureRegistryService::new(AppRegistry::new(self.registry.paths().clone()));
+        let result = match service.snapshot_before(app_id) {
+            Ok(r) => r,
+            Err(e) => {
+                pause(&format!("Snapshot failed: {e}"))?;
+                return Ok(());
+            }
+        };
+
+        clear_screen();
+        println!("OpenNTX Capture Snapshot Before");
+        println!("-------------------------------");
+        println!("App ID: {app_id}");
+        println!("Snapshot path: {}", result.snapshot_path.display());
+        println!("Entries: {}", result.snapshot.entries.len());
+        println!("Errors: {}", result.snapshot.errors.len());
+        println!();
+        println!("Capture snapshots only inspect OpenNTX-managed app directories. No installer is executed.");
+        pause("Snapshot-before written.")
+    }
+
+    fn capture_snapshot_after_screen(&self, app_id: &str) -> Result<()> {
+        let service = CaptureRegistryService::new(AppRegistry::new(self.registry.paths().clone()));
+        let result = match service.snapshot_after(app_id) {
+            Ok(r) => r,
+            Err(e) => {
+                pause(&format!("Snapshot failed: {e}"))?;
+                return Ok(());
+            }
+        };
+
+        clear_screen();
+        println!("OpenNTX Capture Snapshot After");
+        println!("------------------------------");
+        println!("App ID: {app_id}");
+        println!("Snapshot path: {}", result.snapshot_path.display());
+        println!("Entries: {}", result.snapshot.entries.len());
+        println!("Errors: {}", result.snapshot.errors.len());
+        println!();
+        println!("Capture snapshots only inspect OpenNTX-managed app directories. No installer is executed.");
+        pause("Snapshot-after written.")
+    }
+
+    fn capture_diff_screen(&self, app_id: &str) -> Result<()> {
+        let service = CaptureRegistryService::new(AppRegistry::new(self.registry.paths().clone()));
+        let result = match service.diff(app_id) {
+            Ok(r) => r,
+            Err(e) => {
+                pause(&format!("Diff failed: {e}"))?;
+                return Ok(());
+            }
+        };
+
+        clear_screen();
+        println!("OpenNTX Capture Diff");
+        println!("--------------------");
+        println!("App ID: {app_id}");
+        println!("Diff path: {}", result.diff_path.display());
+        println!();
+        println!("Files created: {}", result.diff.files_created.len());
+        println!("Files removed: {}", result.diff.files_removed.len());
+        println!("Files modified: {}", result.diff.files_modified.len());
+        println!(
+            "Directories created: {}",
+            result.diff.directories_created.len()
+        );
+        println!(
+            "Directories removed: {}",
+            result.diff.directories_removed.len()
+        );
+        println!("Symlinks created: {}", result.diff.symlinks_created.len());
+        println!("Symlinks removed: {}", result.diff.symlinks_removed.len());
+        println!(
+            "Registry files changed: {}",
+            result.diff.registry_files_changed.len()
+        );
+        pause("Diff written.")
+    }
+
+    fn capture_report_screen(&self, app_id: &str) -> Result<()> {
+        let service = CaptureRegistryService::new(AppRegistry::new(self.registry.paths().clone()));
+        let result = match service.report(app_id) {
+            Ok(r) => r,
+            Err(e) => {
+                pause(&format!("Report failed: {e}"))?;
+                return Ok(());
+            }
+        };
+
+        clear_screen();
+        println!("OpenNTX Capture Report");
+        println!("----------------------");
+        println!("App ID: {app_id}");
+        println!("App name: {}", result.report.app_name);
+        println!("Report path: {}", result.report_path.display());
+        println!();
+        println!("Files created: {}", result.report.files_created.len());
+        println!("Files modified: {}", result.report.files_modified.len());
+        println!("Files removed: {}", result.report.files_removed.len());
+        println!(
+            "Registry files changed: {}",
+            result.diff.registry_files_changed.len()
+        );
+        println!("Status: {}", result.report.status);
+        pause("Report written.")
+    }
+
+    fn capture_status_screen(&self, app_id: &str) -> Result<()> {
+        let service = CaptureRegistryService::new(AppRegistry::new(self.registry.paths().clone()));
+        let status = match service.status(app_id) {
+            Ok(s) => s,
+            Err(e) => {
+                pause(&format!("Status failed: {e}"))?;
+                return Ok(());
+            }
+        };
+
+        clear_screen();
+        println!("OpenNTX Capture Status");
+        println!("----------------------");
+        println!("App ID: {}", status.app_id);
+        println!("App name: {}", status.app_name);
+        println!("App directory: {}", status.app_dir.display());
+        println!("Capture directory: {}", status.capture_dir.display());
+        println!();
+        println!(
+            "Snapshot before: {}",
+            if status.snapshot_before {
+                "present"
+            } else {
+                "missing"
+            }
+        );
+        println!(
+            "Snapshot after: {}",
+            if status.snapshot_after {
+                "present"
+            } else {
+                "missing"
+            }
+        );
+        println!("Diff: {}", if status.diff { "present" } else { "missing" });
+        println!(
+            "Report: {}",
+            if status.report { "present" } else { "missing" }
+        );
+        println!();
+        println!("Capture snapshots only inspect OpenNTX-managed app directories. No installer is executed.");
+        pause("Press Enter to return.")
+    }
+
     fn run_plan_screen(&self, app_id: &str) -> Result<()> {
         let report =
             create_registered_run_plan(&self.registry, app_id, &RunPlanOptions::default())?;
@@ -246,7 +466,7 @@ impl AppPortalApp {
         }
         println!();
         println!(
-            "{} is registered, but runtime execution is not implemented in V0.7.",
+            "{} is registered, but runtime execution is not implemented in V0.8.",
             report.name
         );
         println!("This action only validates app metadata and prepares a future execution plan.");
@@ -512,6 +732,11 @@ fn print_app_details(
     println!("[R] Run plan");
     println!("[C] Create desktop launcher");
     println!("[x] Remove desktop launcher");
+    println!("[1] Capture: Snapshot Before");
+    println!("[2] Capture: Snapshot After");
+    println!("[3] Capture: Diff");
+    println!("[4] Capture: Report");
+    println!("[5] Capture: Status");
     println!("[D] Dry-run remove app");
     println!("[Delete] Remove app with confirmation");
     println!("[B] Back");

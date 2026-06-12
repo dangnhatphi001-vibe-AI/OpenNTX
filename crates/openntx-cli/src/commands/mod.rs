@@ -1,4 +1,5 @@
 pub mod analyze;
+pub mod capture;
 pub mod desktop;
 pub mod doctor;
 pub mod install;
@@ -47,6 +48,10 @@ pub enum Commands {
         #[command(subcommand)]
         command: manifest::ManifestCommands,
     },
+    Capture {
+        #[command(subcommand)]
+        command: capture::CaptureCommands,
+    },
     Package {
         #[arg(value_name = "app-id")]
         app_id: String,
@@ -87,6 +92,7 @@ pub fn execute(command: Commands) -> Result<()> {
         } => install::run(&file, write_plan, desktop),
         Commands::Desktop { command } => desktop::execute(command),
         Commands::Manifest { command } => manifest::execute(command),
+        Commands::Capture { command } => capture::execute(command),
         Commands::Package { app_id } => package::run(&app_id),
         Commands::Remove {
             app_id,

@@ -3,7 +3,7 @@
 [![CI](https://github.com/openntx/openntx/actions/workflows/ci.yml/badge.svg)](https://github.com/openntx/openntx/actions/workflows/ci.yml)
 ![Status](https://img.shields.io/badge/status-experimental-orange)
 ![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)
-![Runtime](https://img.shields.io/badge/runtime-not%20implemented%20in%20V0.1-lightgrey)
+![Runtime](https://img.shields.io/badge/runtime-not%20implemented%20in%20V0.2-lightgrey)
 
 **Drop EXE. Run Native.**
 
@@ -24,7 +24,7 @@ OpenNTX is a source-available project. The default license is noncommercial; com
 - Not a Bottles clone.
 - Not a Lutris clone.
 - Not a VM manager.
-- Not a complete Windows runtime in V0.1.
+- Not a complete Windows runtime in V0.2.
 - Not a tool for bypassing DRM, anti-cheat, security controls, or malware analysis safeguards.
 
 ## Why This Exists
@@ -43,7 +43,7 @@ The target user experience:
 
 ## Current Status
 
-OpenNTX V0.1 is an experimental foundation and design prototype.
+OpenNTX V0.2 is an experimental foundation and PE analysis prototype.
 
 It includes:
 
@@ -52,6 +52,7 @@ It includes:
 - JSON schemas
 - example manifests and capture reports
 - Rust core models
+- real PE metadata analyzer for headers, sections, entry point, image base, subsystem, and imported DLL names
 - CLI skeleton
 - AppPortal TUI/mock skeleton
 - development scripts
@@ -79,7 +80,7 @@ OpenNTX Core
     v
 Runtime backend abstraction
     |
-    +--> NotImplementedBackend        (V0.1)
+    +--> NotImplementedBackend        (V0.2)
     +--> ExternalCompatibilityBackend (future placeholder)
     +--> FutureNativeBackend          (future PE/NT/Win32 research)
 ```
@@ -88,7 +89,7 @@ The CLI and AppPortal call the core. Runtime logic must not live in the GUI.
 
 ## AppPortal Concept
 
-AppPortal is the user-facing install surface. V0.1 ships as a lightweight TUI/mock that documents the intended flow without adding heavy GUI dependencies.
+AppPortal is the user-facing install surface. V0.2 ships as a lightweight TUI/mock that documents the intended flow without adding heavy GUI dependencies.
 
 Planned AppPortal surfaces:
 
@@ -113,7 +114,7 @@ openntx remove example-app
 openntx doctor ~/Downloads/setup.exe
 ```
 
-V0.1 commands produce validation and planning output. They do not execute Windows binaries.
+V0.2 commands produce validation and planning output. They do not execute Windows binaries.
 
 ## Development
 
@@ -139,7 +140,7 @@ python3 -m pip install --user jsonschema
 tools/dev-check.sh
 ```
 
-## How to Test V0.1
+## How to Test V0.2
 
 Run the required local checks:
 
@@ -158,14 +159,14 @@ tools/mock-install-flow.sh
 cargo run -p openntx-appportal
 ```
 
-The mock install flow creates a temporary minimal PE fixture and demonstrates analysis/install planning only. OpenNTX V0.1 does not execute Windows binaries or installers.
+The mock install flow creates a temporary minimal PE fixture and demonstrates analysis/install planning only. OpenNTX V0.2 does not execute Windows binaries or installers.
 
-See [docs/testing.md](docs/testing.md) for the full test guide and V0.1 test boundaries.
+See [docs/testing.md](docs/testing.md) for the full test guide and V0.2 test boundaries.
 
 ## Roadmap Summary
 
 - Phase 0: concept and repository foundation.
-- Phase 1: real PE analyzer and manifest generator.
+- Phase 1: real PE analyzer implemented; manifest generator remains future work.
 - Phase 2: AppPortal drag-and-drop install flow mock.
 - Phase 3: desktop integration and launcher generation.
 - Phase 4: installer capture prototype.

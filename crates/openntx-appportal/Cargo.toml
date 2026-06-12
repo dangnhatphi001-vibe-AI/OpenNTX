@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 repository.workspace = true
-description = "Lightweight AppPortal mock frontend for the OpenNTX source-available V0.1 foundation."
+description = "Lightweight AppPortal mock frontend for the OpenNTX source-available V0.2 foundation."
 license-file = "../../LICENSE"
 
 [dependencies]

@@ -21,7 +21,7 @@ pub enum OpenNtxError {
     #[error("unsupported operation: {0}")]
     Unsupported(String),
 
-    #[error("not implemented in OpenNTX V0.1: {0}")]
+    #[error("not implemented in OpenNTX V0.2: {0}")]
     NotImplemented(String),
 }
 

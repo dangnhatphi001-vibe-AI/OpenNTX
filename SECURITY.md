@@ -4,7 +4,7 @@ Windows EXE files are untrusted input. OpenNTX must treat installers and applica
 
 ## V0.1 Status
 
-OpenNTX V0.1 does not execute Windows binaries. It only validates input, models app state, generates plans, and documents future runtime architecture.
+OpenNTX V0.2 does not execute Windows binaries. It analyzes PE metadata, validates input, models app state, generates plans, and documents future runtime architecture.
 
 ## Security Principles
 

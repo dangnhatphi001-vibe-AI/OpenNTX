@@ -9,7 +9,7 @@ pub fn render() -> String {
         "6. Create launcher",
         "7. Done",
         "",
-        "V0.1 status: mock only. Installer execution and capture are not implemented.",
+        "V0.2 status: mock only. Installer execution and capture are not implemented.",
     ]
     .join("\n")
 }

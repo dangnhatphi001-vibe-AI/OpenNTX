@@ -32,7 +32,7 @@ pub fn run(file: &Path) -> Result<()> {
     output::field("Status", "dry-run / not implemented");
     output::blank();
     output::note(
-        "Runtime execution is not implemented in V0.1. This command currently validates input and prepares a future execution plan.",
+        "Runtime execution is not implemented. This command currently validates input and prepares a future execution plan.",
     );
 
     Ok(())

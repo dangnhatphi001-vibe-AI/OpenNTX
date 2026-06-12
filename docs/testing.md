@@ -1,6 +1,6 @@
-# Testing OpenNTX V0.1
+# Testing OpenNTX V0.2
 
-OpenNTX V0.1 is a foundation release. Tests verify static analysis, schemas, CLI planning, AppPortal mock output, and core data models. They do not verify Windows application execution because runtime execution is not implemented.
+OpenNTX V0.2 is a foundation release with real PE metadata analysis. Tests verify static analysis, schemas, CLI planning, AppPortal mock output, core data models, PE headers, section tables, subsystem detection, entry point, image base, and imported DLL names. They do not verify Windows application execution because runtime execution is not implemented.
 
 ## Prerequisites
 
@@ -56,7 +56,7 @@ cargo run -p openntx-appportal
 
 Expected result: a text UI/mock showing the home screen, drop zone, install wizard, app library, settings, and CLI bridge preview.
 
-## What V0.1 Tests Do Not Cover
+## What V0.2 Tests Do Not Cover
 
 - Windows process execution.
 - Installer execution.

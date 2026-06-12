@@ -8,7 +8,7 @@ pub fn render() -> String {
         "- Package",
         "- Remove",
         "",
-        "V0.1 status: library data loading is a future module.",
+        "V0.2 status: library data loading is a future module.",
     ]
     .join("\n")
 }

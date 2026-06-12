@@ -85,7 +85,47 @@ pub struct PeAnalysis {
     pub architecture: PeArchitecture,
     pub image_kind: PeImageKind,
     pub subsystem: Option<WindowsSubsystem>,
+    pub dos_header: Option<DosHeader>,
+    pub coff_header: Option<CoffHeader>,
+    pub optional_header: Option<OptionalHeader>,
+    pub sections: Vec<PeSection>,
+    pub imported_dlls: Vec<String>,
     pub suggested_mode: String,
     pub status: String,
     pub warnings: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DosHeader {
+    pub e_lfanew: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CoffHeader {
+    pub machine_raw: u16,
+    pub number_of_sections: u16,
+    pub time_date_stamp: u32,
+    pub pointer_to_symbol_table: u32,
+    pub number_of_symbols: u32,
+    pub size_of_optional_header: u16,
+    pub characteristics: u16,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OptionalHeader {
+    pub magic_raw: u16,
+    pub entry_point_rva: u32,
+    pub image_base: u64,
+    pub subsystem: WindowsSubsystem,
+    pub number_of_rva_and_sizes: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PeSection {
+    pub name: String,
+    pub virtual_size: u32,
+    pub virtual_address: u32,
+    pub raw_data_size: u32,
+    pub raw_data_ptr: u32,
+    pub characteristics: u32,
 }

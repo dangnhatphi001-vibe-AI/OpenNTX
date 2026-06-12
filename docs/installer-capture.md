@@ -33,6 +33,6 @@ Capture reports are structured JSON documents containing:
 - warnings
 - errors
 
-## V0.1 Limitation
+## V0.2 Limitation
 
-V0.1 only models capture plans and reports. It does not execute installers or perform real filesystem/registry diff capture.
+V0.2 only models capture plans and reports. It does not execute installers or perform real filesystem/registry diff capture.

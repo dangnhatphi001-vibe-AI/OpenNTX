@@ -18,7 +18,7 @@ pub fn run(app_id: &str) -> Result<()> {
     output::field("Status", "planned / not implemented");
     output::blank();
     output::note(
-        "V0.1 does not remove app data. Future versions will require explicit confirmation.",
+        "V0.2 does not remove app data. Future versions will require explicit confirmation.",
     );
     Ok(())
 }

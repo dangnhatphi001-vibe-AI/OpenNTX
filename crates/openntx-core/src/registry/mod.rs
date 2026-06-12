@@ -1,4 +1,5 @@
 use crate::app_id::is_valid_app_id;
+use crate::desktop::generate_desktop_entry;
 use crate::manifest::{read_manifest, write_manifest_pretty, AppManifest};
 use crate::paths::OpenNtxPaths;
 use crate::{OpenNtxError, Result};
@@ -47,6 +48,7 @@ pub struct RegisteredApp {
     pub name: String,
     pub install_mode: String,
     pub architecture: String,
+    pub desktop_launcher_exists: bool,
     pub manifest_path: PathBuf,
 }
 
@@ -75,6 +77,21 @@ pub struct RemovePlan {
     pub manifest_path: PathBuf,
     pub desktop_entry_path: PathBuf,
     pub would_remove: bool,
+    pub removed: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DesktopMode {
+    DryRun,
+    Write,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DesktopPlan {
+    pub app_id: String,
+    pub desktop_entry_path: PathBuf,
+    pub content: String,
+    pub written: bool,
     pub removed: bool,
 }
 
@@ -199,11 +216,14 @@ impl AppRegistry {
                 continue;
             }
             let manifest = read_manifest(&manifest_path)?;
+            let app_id = manifest.app_id;
+            let desktop_launcher_exists = self.paths.desktop_entry_path(&app_id).exists();
             apps.push(RegisteredApp {
-                app_id: manifest.app_id,
+                app_id,
                 name: manifest.name,
                 install_mode: manifest.install_mode,
                 architecture: manifest.architecture,
+                desktop_launcher_exists,
                 manifest_path,
             });
         }
@@ -245,6 +265,56 @@ impl AppRegistry {
             manifest_path,
             desktop_entry_path,
             would_remove: true,
+            removed,
+        })
+    }
+
+    pub fn create_desktop_entry(
+        &self,
+        app_id: &str,
+        mode: DesktopMode,
+        cli_command: &str,
+    ) -> Result<DesktopPlan> {
+        validate_app_id(app_id)?;
+        let manifest = self.load_manifest(app_id)?;
+        let content = generate_desktop_entry(&manifest, cli_command)?;
+        let desktop_entry_path = self.paths.desktop_entry_path(app_id);
+        let mut written = false;
+
+        if mode == DesktopMode::Write {
+            if let Some(parent) = desktop_entry_path.parent() {
+                fs::create_dir_all(parent).map_err(|source| OpenNtxError::io(parent, source))?;
+            }
+            fs::write(&desktop_entry_path, content.as_bytes())
+                .map_err(|source| OpenNtxError::io(&desktop_entry_path, source))?;
+            written = true;
+        }
+
+        Ok(DesktopPlan {
+            app_id: app_id.to_string(),
+            desktop_entry_path,
+            content,
+            written,
+            removed: false,
+        })
+    }
+
+    pub fn remove_desktop_entry(&self, app_id: &str, mode: DesktopMode) -> Result<DesktopPlan> {
+        validate_app_id(app_id)?;
+        let desktop_entry_path = self.paths.desktop_entry_path(app_id);
+        let mut removed = false;
+
+        if mode == DesktopMode::Write && desktop_entry_path.exists() {
+            fs::remove_file(&desktop_entry_path)
+                .map_err(|source| OpenNtxError::io(&desktop_entry_path, source))?;
+            removed = true;
+        }
+
+        Ok(DesktopPlan {
+            app_id: app_id.to_string(),
+            desktop_entry_path,
+            content: String::new(),
+            written: false,
             removed,
         })
     }

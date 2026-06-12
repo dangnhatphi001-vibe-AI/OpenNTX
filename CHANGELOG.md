@@ -4,12 +4,21 @@ All notable changes to OpenNTX will be documented in this file.
 
 ## Unreleased
 
+- Add V0.5 desktop launcher writer with `openntx desktop create/remove`, `install --write-plan --desktop`, launcher status in list/show, and desktop create/remove tests.
 - Add V0.4 app registry and install plan writer with `openntx install --write-plan`, `openntx list`, `openntx show`, and confirmed/dry-run remove behavior.
 - Add V0.3 manifest generation from PE analysis, including `openntx manifest generate`, JSON output, output-file writing, install dry-run manifest planning, generated manifest diagnostics metadata, and a generated-from-PE example.
 - Add V0.2 real PE analyzer metadata parsing for DOS header, PE signature, COFF header, optional header, machine architecture, subsystem, image kind, section table, entry point, image base, and imported DLL names.
 - Add V0.1.1 polish: CI workflow, README badges, GitHub issue and pull request templates, architecture diagram, testing guide, and screenshots placeholder.
 - Add V0.1 foundation documentation, schemas, examples, Rust workspace, CLI skeleton, core models, AppPortal mock, and development scripts.
 - Add source-available noncommercial licensing and commercial-license terms.
+
+## 0.5.0 - Desktop Launcher Writer
+
+- Write user `.desktop` launchers for registered apps.
+- Add `openntx desktop create <app-id>`.
+- Add `openntx desktop remove <app-id>`.
+- Add `openntx install <file.exe> --write-plan --desktop`.
+- Keep launcher Exec pointed at `openntx run <app-id>` while runtime remains not implemented.
 
 ## 0.4.0 - App Registry and Install Plan Writer
 

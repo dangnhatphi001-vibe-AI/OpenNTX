@@ -5,6 +5,7 @@ use openntx_core::Result;
 pub fn run(app_id: &str) -> Result<()> {
     let registry = AppRegistry::from_env()?;
     let manifest = registry.load_manifest(app_id)?;
+    let desktop_entry = registry.paths().desktop_entry_path(app_id);
 
     output::title("OpenNTX App");
     output::field("App ID", &manifest.app_id);
@@ -15,6 +16,15 @@ pub fn run(app_id: &str) -> Result<()> {
     output::field("Sandbox", &manifest.sandbox.profile);
     output::field("Imported DLLs", manifest.diagnostics.imported_dlls.len());
     output::field("Manifest", registry.paths().manifest_path(app_id).display());
+    output::field("Desktop entry", desktop_entry.display());
+    output::field(
+        "Desktop status",
+        if desktop_entry.exists() {
+            "present"
+        } else {
+            "not created"
+        },
+    );
     output::field("Status", "registered / analysis-only");
     Ok(())
 }

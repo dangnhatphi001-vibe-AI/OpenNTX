@@ -1,6 +1,6 @@
 # Limitations
 
-OpenNTX V0.4 does not run arbitrary Windows software.
+OpenNTX V0.5 does not run arbitrary Windows software.
 
 Important limitations:
 
@@ -10,8 +10,8 @@ Important limitations:
 - Anti-cheat and protected software are out of scope.
 - Malware risk exists.
 - Real sandboxing is mandatory for production use.
-- Installer capture is not implemented in V0.4.
-- Registry overlay execution is not implemented in V0.4.
+- Installer capture is not implemented in V0.5.
+- Registry overlay execution is not implemented in V0.5.
 - Desktop launchers are modeled and generated, but they do not make Windows execution work.
 - Runtime backends are placeholders.
 

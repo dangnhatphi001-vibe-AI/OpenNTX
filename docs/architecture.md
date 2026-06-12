@@ -16,12 +16,12 @@ OpenNTX Core
   +--> sandbox policy resolver
   +--> registry overlay model
   +--> filesystem mapping model
-  +--> desktop integration
+  +--> desktop integration writer
   |
   v
 runtime backend
   |
-  +--> NotImplementedBackend        (V0.4)
+  +--> NotImplementedBackend        (V0.5)
   +--> ExternalCompatibilityBackend (future placeholder)
   +--> FutureNativeBackend          (future PE/NT/Win32 research)
   |
@@ -45,6 +45,6 @@ app process
 
 The GUI must not contain runtime logic. AppPortal calls core APIs or CLI-compatible flows. Runtime backends must expose explicit plans and errors instead of silently falling back to unsupported behavior.
 
-## V0.4 Runtime State
+## V0.5 Runtime State
 
-Runtime execution is intentionally not implemented. The only runtime backend available in V0.4 returns a not-implemented plan.
+Runtime execution is intentionally not implemented. The only runtime backend available in V0.5 returns a not-implemented plan.

@@ -68,7 +68,7 @@ impl RuntimeBackend for FutureNativeBackend {
             executable: manifest.executable.path.clone(),
             implemented: false,
             message:
-                "Future native PE/NT/Win32 backend is a research module, not V0.4 functionality."
+                "Future native PE/NT/Win32 backend is a research module, not V0.5 functionality."
                     .to_string(),
         }
     }

@@ -22,6 +22,18 @@ The launcher should execute:
 openntx run <app-id>
 ```
 
+V0.5 writes user launchers for registered apps:
+
+```bash
+openntx desktop create <app-id> --dry-run
+openntx desktop create <app-id> --yes
+openntx desktop remove <app-id> --dry-run
+openntx desktop remove <app-id> --yes
+openntx install app.exe --write-plan --desktop
+```
+
+`openntx desktop create` is dry-run by default. `--yes` is required to write the file. The generated `Exec` line intentionally calls `openntx run <app-id>` even though runtime execution is still not implemented.
+
 ## Icons
 
 Icons should be extracted from PE resources in a future module or assigned from package metadata.
@@ -42,7 +54,7 @@ System package icon root:
 
 - MIME/file associations.
 - Open-with integration.
-- App menu visibility controls.
-- Uninstall metadata.
+- App menu visibility controls beyond basic `.desktop` generation.
+- Rich uninstall metadata.
 - Taskbar/window identity.
 - Icon extraction and conversion.

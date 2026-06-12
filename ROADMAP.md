@@ -2,11 +2,12 @@
 
 OpenNTX is ambitious but must remain honest about what is implemented.
 
-## Current V0.4 Status
+## Current V0.5 Status
 
 - Real PE analyzer implemented.
 - Manifest generation from PE metadata implemented.
 - Local app registry and install plan writer implemented.
+- Desktop launcher writer implemented.
 - Windows runtime execution is not implemented.
 - Installer execution and capture remain future modules.
 
@@ -96,10 +97,9 @@ OpenNTX is ambitious but must remain honest about what is implemented.
 
 ## Next Work Plan
 
-1. Implement desktop entry writing from registered manifests.
-2. Connect AppPortal file picker/drop flow to analyze, manifest generation, and registry plan writing commands.
-3. Implement dry-run installer capture report generation.
-4. Implement real filesystem diff capture in a temporary directory.
-5. Implement packaging prototype for `.deb` layout.
-6. Expand compatibility profile matching from generated manifest metadata.
-7. Start a research branch for actual PE loading and NT runtime concepts.
+1. Connect AppPortal file picker/drop flow to analyze, manifest generation, registry plan writing, and desktop launcher commands.
+2. Implement dry-run installer capture report generation.
+3. Implement real filesystem diff capture in a temporary directory.
+4. Implement packaging prototype for `.deb` layout.
+5. Expand compatibility profile matching from generated manifest metadata.
+6. Start a research branch for actual PE loading and NT runtime concepts.

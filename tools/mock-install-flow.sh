@@ -67,8 +67,8 @@ echo
 echo "+ openntx install ${input}"
 "${CARGO_BIN}" run -q -p openntx-cli -- install "${input}" || true
 echo
-echo "+ openntx install ${input} --write-plan"
-XDG_DATA_HOME="${mock_xdg_data_home}" "${CARGO_BIN}" run -q -p openntx-cli -- install "${input}" --write-plan || true
+echo "+ openntx install ${input} --write-plan --desktop"
+XDG_DATA_HOME="${mock_xdg_data_home}" "${CARGO_BIN}" run -q -p openntx-cli -- install "${input}" --write-plan --desktop || true
 registered_app_id="$(XDG_DATA_HOME="${mock_xdg_data_home}" "${CARGO_BIN}" run -q -p openntx-cli -- list | awk -F'[:|]' '/^App:/ {gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2; exit}')"
 echo
 echo "+ openntx list"
@@ -78,6 +78,12 @@ if [[ -n "${registered_app_id}" ]]; then
   echo "+ openntx show ${registered_app_id}"
   XDG_DATA_HOME="${mock_xdg_data_home}" "${CARGO_BIN}" run -q -p openntx-cli -- show "${registered_app_id}" || true
   echo
+  echo "+ openntx desktop create ${registered_app_id} --dry-run"
+  XDG_DATA_HOME="${mock_xdg_data_home}" "${CARGO_BIN}" run -q -p openntx-cli -- desktop create "${registered_app_id}" --dry-run || true
+  echo
+  echo "+ openntx desktop remove ${registered_app_id} --dry-run"
+  XDG_DATA_HOME="${mock_xdg_data_home}" "${CARGO_BIN}" run -q -p openntx-cli -- desktop remove "${registered_app_id}" --dry-run || true
+  echo
   echo "+ openntx remove ${registered_app_id} --dry-run"
   XDG_DATA_HOME="${mock_xdg_data_home}" "${CARGO_BIN}" run -q -p openntx-cli -- remove "${registered_app_id}" --dry-run || true
 fi
@@ -85,4 +91,4 @@ echo
 echo "+ openntx package ${app_id}"
 "${CARGO_BIN}" run -q -p openntx-cli -- package "${app_id}"
 echo
-echo "Status: demonstration only. Runtime execution and installer capture are not implemented in V0.4."
+echo "Status: demonstration only. Runtime execution and installer capture are not implemented in V0.5."

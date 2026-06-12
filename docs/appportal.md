@@ -2,7 +2,7 @@
 
 AppPortal is the user-friendly frontend for OpenNTX. It is not the runtime and must not contain compatibility-layer logic.
 
-V0.4 provides a lightweight TUI/mock so the project can stay buildable without requiring GTK4 or libadwaita development packages.
+V0.5 provides a lightweight TUI/mock so the project can stay buildable without requiring GTK4 or libadwaita development packages.
 
 ## Home
 
@@ -43,12 +43,13 @@ Recommended actions:
 The app library should list installed OpenNTX apps with actions:
 
 - Run
+- Create Launcher
 - Settings
 - Repair
 - Package
 - Remove
 
-V0.4 AppPortal mock reads registered apps from:
+V0.5 AppPortal mock reads registered apps from:
 
 ```text
 ~/.local/share/openntx/apps/
@@ -63,4 +64,4 @@ V0.4 AppPortal mock reads registered apps from:
 
 ## Background Services
 
-V0.4 does not require a heavy background daemon. Future background services must have a documented reason, narrow permissions, and clear diagnostics.
+V0.5 does not require a heavy background daemon. Future background services must have a documented reason, narrow permissions, and clear diagnostics.

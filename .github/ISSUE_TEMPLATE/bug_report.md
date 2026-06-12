@@ -43,4 +43,4 @@ Does this involve EXE handling, sandboxing, filesystem access, registry overlays
 
 ## Compatibility Claim Check
 
-OpenNTX V0.4 does not execute Windows applications. Do not report "app does not run" as a runtime bug unless the issue is about documented dry-run behavior, analysis, manifest generation, schemas, docs, or planning output.
+OpenNTX V0.5 does not execute Windows applications. Do not report "app does not run" as a runtime bug unless the issue is about documented dry-run behavior, analysis, manifest generation, schemas, docs, or planning output.

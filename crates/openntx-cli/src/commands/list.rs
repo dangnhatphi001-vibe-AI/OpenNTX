@@ -17,8 +17,16 @@ pub fn run() -> Result<()> {
         output::field(
             "App",
             format!(
-                "{} | {} | {} | {}",
-                app.app_id, app.name, app.install_mode, app.architecture
+                "{} | {} | {} | {} | {}",
+                app.app_id,
+                app.name,
+                app.install_mode,
+                app.architecture,
+                if app.desktop_launcher_exists {
+                    "desktop"
+                } else {
+                    "no-desktop"
+                }
             ),
         );
     }

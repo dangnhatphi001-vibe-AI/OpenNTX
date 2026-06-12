@@ -3,11 +3,16 @@ use openntx_core::app_id::generate_app_id;
 use openntx_core::manifest::{generate_manifest_from_pe, ManifestGenerationInput};
 use openntx_core::paths::OpenNtxPaths;
 use openntx_core::pe::analyze_pe;
-use openntx_core::registry::AppRegistry;
+use openntx_core::registry::{AppRegistry, DesktopMode};
 use openntx_core::{OpenNtxError, Result};
 use std::path::Path;
 
-pub fn run(file: &Path, write_plan: bool) -> Result<()> {
+pub fn run(file: &Path, write_plan: bool, desktop: bool) -> Result<()> {
+    if desktop && !write_plan {
+        return Err(OpenNtxError::InvalidInput(
+            "--desktop requires --write-plan".to_string(),
+        ));
+    }
     let analysis = analyze_pe(file)?;
     if !analysis.is_pe {
         return Err(OpenNtxError::Unsupported(format!(
@@ -61,6 +66,15 @@ pub fn run(file: &Path, write_plan: bool) -> Result<()> {
         output::field("drive_c", result.drive_c_path.display());
         output::field("registry", result.registry_path.display());
         output::field("logs", result.logs_path.display());
+        if desktop {
+            let desktop_plan = registry.create_desktop_entry(
+                &generated.manifest.app_id,
+                DesktopMode::Write,
+                "openntx",
+            )?;
+            output::field("Desktop entry", desktop_plan.desktop_entry_path.display());
+            output::field("Desktop status", "written");
+        }
         output::field("Status", "written / analysis-only");
     } else {
         output::field("Status", "dry-run / not written");

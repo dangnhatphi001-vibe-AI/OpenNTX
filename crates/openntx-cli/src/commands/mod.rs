@@ -1,4 +1,5 @@
 pub mod analyze;
+pub mod desktop;
 pub mod doctor;
 pub mod install;
 pub mod list;
@@ -27,6 +28,12 @@ pub enum Commands {
         file: PathBuf,
         #[arg(long)]
         write_plan: bool,
+        #[arg(long)]
+        desktop: bool,
+    },
+    Desktop {
+        #[command(subcommand)]
+        command: desktop::DesktopCommands,
     },
     Manifest {
         #[command(subcommand)]
@@ -59,7 +66,12 @@ pub fn execute(command: Commands) -> Result<()> {
     match command {
         Commands::Analyze { file } => analyze::run(&file),
         Commands::Run { target } => run::run(&target),
-        Commands::Install { file, write_plan } => install::run(&file, write_plan),
+        Commands::Install {
+            file,
+            write_plan,
+            desktop,
+        } => install::run(&file, write_plan, desktop),
+        Commands::Desktop { command } => desktop::execute(command),
         Commands::Manifest { command } => manifest::execute(command),
         Commands::Package { app_id } => package::run(&app_id),
         Commands::Remove {

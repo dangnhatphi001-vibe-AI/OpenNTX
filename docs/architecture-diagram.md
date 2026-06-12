@@ -1,6 +1,6 @@
 # Architecture Diagram
 
-OpenNTX is core-first. The GUI is a frontend. Runtime execution is not implemented in V0.4.
+OpenNTX is core-first. The GUI is a frontend. Runtime execution is not implemented in V0.5.
 
 ```text
                                   Linux Desktop
@@ -35,7 +35,7 @@ User input
                 |                          |                                           |
                 v                          v                                           v
       NotImplementedBackend       ExternalCompatibilityBackend                FutureNativeBackend
-            V0.4 only                 future placeholder                  future PE/NT/Win32 research
+            V0.5 only                 future placeholder                  future PE/NT/Win32 research
                 |
                 v
        dry-run plan / clear error
@@ -56,6 +56,6 @@ User input
 ~/.local/share/icons/hicolor/
 ```
 
-## V0.4 Boundary
+## V0.5 Boundary
 
-V0.4 validates inputs, parses PE metadata, generates manifests, models data, generates plans, and tests the project foundation. It does not execute Windows binaries or installers.
+V0.5 validates inputs, parses PE metadata, generates manifests, writes app registry plans, writes desktop launchers, and tests the project foundation. It does not execute Windows binaries or installers.

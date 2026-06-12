@@ -5,12 +5,13 @@ pub fn render(apps: &[RegisteredApp]) -> String {
         "App Library".to_string(),
         "- List installed OpenNTX apps".to_string(),
         "- Run".to_string(),
+        "- Create Launcher".to_string(),
         "- Settings".to_string(),
         "- Repair".to_string(),
         "- Package".to_string(),
         "- Remove".to_string(),
         "".to_string(),
-        "V0.4 status: reads registered apps from the local OpenNTX app registry.".to_string(),
+        "V0.5 status: reads registered apps from the local OpenNTX app registry.".to_string(),
     ];
 
     if apps.is_empty() {

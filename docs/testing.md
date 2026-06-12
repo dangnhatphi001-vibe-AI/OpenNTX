@@ -1,6 +1,6 @@
-# Testing OpenNTX V0.4
+# Testing OpenNTX V0.5
 
-OpenNTX V0.4 is a foundation release with real PE metadata analysis, manifest generation, and local app registry plan writing. Tests verify static analysis, schemas, CLI planning, AppPortal mock output, core data models, PE headers, section tables, subsystem detection, entry point, image base, imported DLL names, generated manifest validation, registry directory creation, list/show, and remove dry-run/delete behavior. They do not verify Windows application execution because runtime execution is not implemented.
+OpenNTX V0.5 is a foundation release with real PE metadata analysis, manifest generation, local app registry plan writing, and desktop launcher writing. Tests verify static analysis, schemas, CLI planning, AppPortal mock output, core data models, PE headers, section tables, subsystem detection, entry point, image base, imported DLL names, generated manifest validation, registry directory creation, list/show, remove dry-run/delete behavior, and desktop launcher create/remove behavior. They do not verify Windows application execution because runtime execution is not implemented.
 
 ## Prerequisites
 
@@ -63,8 +63,13 @@ Write a local registry plan without touching your real app registry:
 ```bash
 export XDG_DATA_HOME="$(mktemp -d)"
 cargo run -p openntx-cli -- install app.exe --write-plan
+cargo run -p openntx-cli -- install app.exe --write-plan --desktop
 cargo run -p openntx-cli -- list
 cargo run -p openntx-cli -- show <app-id>
+cargo run -p openntx-cli -- desktop create <app-id> --dry-run
+cargo run -p openntx-cli -- desktop create <app-id> --yes
+cargo run -p openntx-cli -- desktop remove <app-id> --dry-run
+cargo run -p openntx-cli -- desktop remove <app-id> --yes
 cargo run -p openntx-cli -- remove <app-id> --dry-run
 cargo run -p openntx-cli -- remove <app-id> --yes
 ```
@@ -79,7 +84,7 @@ cargo run -p openntx-appportal
 
 Expected result: a text UI/mock showing the home screen, drop zone, install wizard, app library, settings, and CLI bridge preview.
 
-## What V0.4 Tests Do Not Cover
+## What V0.5 Tests Do Not Cover
 
 - Windows process execution.
 - Installer execution.

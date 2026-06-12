@@ -1,6 +1,6 @@
 use openntx_core::manifest::AppManifest;
 use openntx_core::paths::OpenNtxPaths;
-use openntx_core::registry::{AppRegistry, RemoveMode};
+use openntx_core::registry::{AppRegistry, DesktopMode, RemoveMode};
 use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -78,6 +78,41 @@ fn remove_yes_deletes_registered_app_directory() {
 
     assert!(remove_plan.removed);
     assert!(!result.app_dir.exists());
+}
+
+#[test]
+fn desktop_create_and_remove_support_dry_run_and_write() {
+    let registry = temp_registry();
+    let manifest = fixture_manifest("desktop-app");
+    let install_plan = registry.build_install_plan(&manifest, None);
+    registry
+        .register_plan(&manifest, &install_plan)
+        .expect("registry should write app");
+
+    let dry_run = registry
+        .create_desktop_entry("desktop-app", DesktopMode::DryRun, "openntx")
+        .expect("desktop dry-run should plan");
+    assert!(!dry_run.written);
+    assert!(dry_run.content.contains("Exec=openntx run desktop-app"));
+    assert!(!dry_run.desktop_entry_path.exists());
+
+    let written = registry
+        .create_desktop_entry("desktop-app", DesktopMode::Write, "openntx")
+        .expect("desktop write should succeed");
+    assert!(written.written);
+    assert!(written.desktop_entry_path.is_file());
+
+    let remove_dry_run = registry
+        .remove_desktop_entry("desktop-app", DesktopMode::DryRun)
+        .expect("desktop remove dry-run should plan");
+    assert!(!remove_dry_run.removed);
+    assert!(written.desktop_entry_path.exists());
+
+    let removed = registry
+        .remove_desktop_entry("desktop-app", DesktopMode::Write)
+        .expect("desktop remove should delete");
+    assert!(removed.removed);
+    assert!(!written.desktop_entry_path.exists());
 }
 
 fn fixture_manifest(app_id: &str) -> AppManifest {

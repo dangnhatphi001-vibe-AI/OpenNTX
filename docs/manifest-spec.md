@@ -28,9 +28,9 @@ Default user manifest path:
 - `packaging`: future package metadata.
 - `diagnostics`: logging, crash report preferences, and optional PE-derived metadata such as imported DLL names, entry point RVA, and image base.
 
-## V0.4 Generation
+## V0.5 Generation
 
-OpenNTX V0.4 can generate a manifest from PE analysis:
+OpenNTX V0.5 can generate a manifest from PE analysis:
 
 ```bash
 openntx manifest generate app.exe
@@ -49,7 +49,7 @@ Generation rules:
 - entry point RVA and image base are stored in diagnostics when available.
 - sandbox defaults use the standard profile with network/documents/downloads set to ask and home/removable drives denied.
 
-## V0.4 Registry Writes
+## V0.5 Registry Writes
 
 `openntx install app.exe --write-plan` writes:
 
@@ -64,6 +64,14 @@ Generation rules:
 ```
 
 This is still metadata and directory preparation only. No Windows code is executed.
+
+With `--desktop`, V0.5 also writes:
+
+```text
+~/.local/share/applications/openntx-<app-id>.desktop
+```
+
+The desktop launcher uses `Exec=openntx run <app-id>`. Runtime execution remains a not-implemented backend.
 
 ## Policy
 

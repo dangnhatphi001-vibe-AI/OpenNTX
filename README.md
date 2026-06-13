@@ -12,106 +12,253 @@
 
 <p align="center">
   <a href="https://github.com/openntx/openntx/actions/workflows/ci.yml"><img src="https://github.com/openntx/openntx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/status-v1.4.0--alpha-orange" alt="Status">
+  <img src="https://img.shields.io/badge/version-v2.2.0--alpha-brightgreen" alt="Version">
+  <img src="https://img.shields.io/badge/era-Execution%20%26%20Subsystem-critical" alt="Era">
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="License">
-  <img src="https://img.shields.io/badge/runtime-not%20implemented-lightgrey" alt="Runtime">
+  <img src="https://img.shields.io/badge/runtime-LIVE-brightgreen" alt="Runtime">
 </p>
 
-OpenNTX is an experimental **Windows Application Subsystem for Linux**.
-It makes Windows PE/EXE applications feel like native Linux desktop apps by
-combining PE detection, app manifests, compatibility profiles, real-time
-installer capture, sandboxing, .deb packaging, and desktop integration — all
-driven by a structured manifest and profile database.
-
-> **Current status:** V1.4.0-alpha — analysis, profiling, real-time capture,
-> and native .deb packaging are implemented. Runtime execution is **not**
-> implemented yet.
+> **Version: v2.2.0-alpha — The Execution & Subsystem Era**
+>
+> OpenNTX has crossed the Rubicon. The V1.x identity layer is complete.
+> The kernel now recognises `.exe` files natively, the runtime executes them
+> in isolated sandboxes, and the TUI monitors every capture event in
+> real time through a live IPC bridge. This is no longer a planning tool —
+> **it is a subsystem.**
 
 ---
 
-## Core Vision & Philosophy
+## What OpenNTX Actually Is
 
 OpenNTX is **not** a Wine frontend. It is **not** Proton. It is **not** a
 prefix manager.
 
 OpenNTX is a **subsystem** — a structured layer that sits between a Windows
-application and the Linux host, translating application identity, filesystem
+application and the Linux host. It translates application identity, filesystem
 layout, registry expectations, and runtime requirements into native Linux
 desktop semantics.
 
-The execution chain:
+When you double-click a `.exe` on an OpenNTX-enabled system:
 
-```text
-  Windows Application (.exe / .msi)
-           │
-           ▼
-  ┌─────────────────────────┐
-  │   OpenNTX Runtime        │  PE analysis · Manifest resolution
-  │   (identity & planning)  │  Compatibility profile lookup
-  └────────────┬────────────┘
-               │
-               ▼
-  ┌─────────────────────────┐
-  │   OpenNTX Services       │  Sandbox policy · Registry overlay
-  │   (isolation & mapping)  │  Filesystem mapping · Desktop integration
-  └────────────┬────────────┘
-               │
-               ▼
-  ┌─────────────────────────┐
-  │   Linux Host             │  Native launcher · Isolated state
-  │   (desktop & process)    │  Logs · Uninstall metadata
-  └─────────────────────────┘
-```
+1. The **Linux kernel** intercepts the execution via `binfmt_misc`.
+2. The kernel redirects to `/usr/bin/openntx-runtime`.
+3. The runtime **SHA-256 hashes** the PE file and queries the Profile Database.
+4. If a profile exists → **isolated execution** with full sandbox policy.
+5. If no profile exists → **Intelligent Auto-Fallback**: the runtime silently
+   activates a `CaptureSession`, executes the PE, records every filesystem
+   change, and **auto-generates a compatibility profile** — all on the first run.
+6. Throughout the capture, **live status** is streamed via Unix Domain Socket
+   to the TUI AppPortal, which displays a blinking `⚠ [KERNEL] SYSTEM IS
+   CAPTURING` banner in real time.
 
-The user drops an EXE. OpenNTX analyses it, generates a manifest, resolves a
-compatibility profile, captures installer behaviour in real time, maps the
-filesystem and registry, applies a sandbox policy, and packages everything
-into a native `.deb` with a Linux desktop launcher. The application appears
-in the system menu like any other installed program.
-
-No prefixes. No wrapper scripts. No manual command lines.
+No prefixes. No wrapper scripts. No manual configuration. The subsystem
+learns.
 
 ---
 
-## Roadmap — V1.x Series
+## Data Flow — Kernel to Glass
+
+```text
+  ┌─────────────┐
+  │  User runs   │   $ ./app.exe   or   double-click in file manager
+  │  a .exe file │
+  └──────┬──────┘
+         │
+         ▼
+  ┌──────────────────────────────────────────────────────────────┐
+  │  Linux Kernel — binfmt_misc                                   │
+  │  Detects MZ header -> traps execution                        │
+  │  Redirects to: /usr/bin/openntx-runtime                      │
+  └──────┬───────────────────────────────────────────────────────┘
+         │
+         ▼
+  ┌──────────────────────────────────────────────────────────────┐
+  │  RuntimeEntrypoint::dispatch_execution()                      │
+  │                                                               │
+  │  ┌─────────────┐    ┌─────────────────┐    ┌──────────────┐ │
+  │  │ SHA-256 Hash │-->│ ProfileManager   │-->│ Profile      │ │
+  │  │ of PE file   │    │ lookup (V1.2)    │    │ exists?      │ │
+  │  └─────────────┘    └─────────────────┘    └──────┬───────┘ │
+  │                                                    │         │
+  │                          ┌─────────────────────────┤         │
+  │                          │                         │         │
+  │                     YES v                    NO v            │
+  │              ┌──────────────┐     ┌───────────────────────┐ │
+  │              │ OpenNTXExec  │     │ Auto-Fallback Capture │ │
+  │              │ .execute_pe()│     │                       │ │
+  │              │ (direct run) │     │ 1. Create sandbox     │ │
+  │              └──────────────┘     │ 2. CaptureSession     │ │
+  │                                   │ 3. Execute PE (1st)   │ │
+  │                                   │ 4. Record events      │ │
+  │                                   │ 5. Build CompatProfile│ │
+  │                                   │ 6. Save to DB         │ │
+  │                                   └───────────┬───────────┘ │
+  │                                               │             │
+  └───────────────────────────────────────────────┘             │
+                                                                │
+  ┌─────────────────────────────────────────────────────────────┘
+  │
+  │   During capture (V2.2 IPC Bridge):
+  │
+  │   ┌────────────────┐    Unix Domain     ┌──────────────────┐
+  │   │ RuntimeIpcClient│---Socket (UDS)---->│ RuntimeIpcServer │
+  │   │ sends JSON lines│   /tmp/openntx_    │ receives & fwd   │
+  │   │ per event       │   runtime.sock     │ via mpsc channel │
+  │   └────────────────┘                    └────────┬─────────┘
+  │                                                   │
+  │                                                   v
+  │                                        ┌──────────────────┐
+  │                                        │ TUI AppPortal     │
+  │                                        │                   │
+  │                                        │ ⚠ [KERNEL]        │
+  │                                        │ SYSTEM IS         │
+  │                                        │ CAPTURING:        │
+  │                                        │ app-abc123 -- 47  │
+  │                                        │ files tracked     │
+  │                                        └──────────────────┘
+  v
+  ┌──────────────────────────────────────────────────────────────┐
+  │  Linux Host                                                    │
+  │  Isolated Wine prefix · Native .desktop launcher · Logs       │
+  └──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Roadmap — The Complete Journey
 
 - [x] **V1.0-alpha — Foundation**
   PE/EXE Analyzer, Manifest Generator, App Registry, Desktop Launcher,
-  Run-Plan Diagnostics, Capture Snapshot/Diff, .deb Package Builder,
-  App Management (rename, duplicate, export/import), Doctor/Integrity
-  Checks, Logs, Config System, Shell Completions.
+  Run-Plan Diagnostics, Capture Snapshot/Diff, Doctor, Logs, Config,
+  Shell Completions.
 
 - [x] **V1.1.0 — AppPortal UX & Async Event Loop**
-  Async TUI with crossterm event system (dedicated OS thread, no tokio
-  blocking), Library/Details/Capture/Package/Doctor/Logs screens,
-  background worker tasks, graceful terminal teardown with panic hook.
+  Async TUI with crossterm (dedicated OS thread), Library/Details/Capture/
+  Package/Doctor/Logs screens, background workers, graceful terminal teardown.
 
 - [x] **V1.2.0 — Compatibility Profile Database**
-  Per-application `CompatProfile` schema (metadata, runtime requirements,
-  filesystem rules, registry rules, installer behaviour), `ProfileManager`
-  with JSON persistence at `~/.local/share/openntx/profiles/`, integration
-  into AppPortal TUI state.
+  Per-app `CompatProfile` schema (metadata, runtime reqs, filesystem rules,
+  registry rules, installer behaviour), `ProfileManager` with JSON persistence
+  at `~/.local/share/openntx/profiles/`.
 
 - [x] **V1.3.0 — Advanced Installer Capture Workflow**
-  Real-time filesystem capture engine using Linux `inotify`. Replaces the
-  old snapshot-before/after + diff mechanism with zero-noise streaming
-  events. See [V1.3.0 details](#v130--real-time-capture-engine) below.
+  Real-time filesystem capture via Linux `inotify`. Streaming event model
+  replaces old snapshot-before/after. Recursive auto-watch, symlink rejection,
+  non-blocking polling with 250ms idle sleep.
 
 - [x] **V1.4.0 — Debian Package Builder & Linux Integration**
-  Profile-driven `.deb` package builder with automatic `DEBIAN/control`
-  generation, native `.desktop` launcher, cross-filesystem safety, and
-  `dpkg-deb` toolchain integration. See
-  [V1.4.0 details](#v140--debian-package-builder) below.
+  Profile-driven `.deb` builder with `DEBIAN/control` generation, native
+  `.desktop` launcher, cross-filesystem safety, `dpkg-deb` toolchain.
+
+- [x] **V2.0.0 — Kernel Integration via binfmt_misc & Isolated PE Executor**
+  `BinfmtManager` registers PE format (`MZ` magic) with Linux kernel.
+  `OpenNTXExecutor` orchestrates SHA-256 identification -> profile lookup ->
+  sandbox setup -> Wine headless execution with `WINEDEBUG=-all` isolation.
+
+- [x] **V2.1.0 — Runtime Entrypoint with SHA256 Profiling & Auto-Fallback**
+  `RuntimeEntrypoint` parses kernel-supplied arguments, dispatches execution.
+  **Intelligent Auto-Fallback**: on first run of an unknown PE, automatically
+  activates `CaptureSession`, executes the PE, analyses captured events,
+  and persists a new `CompatProfile` — zero user intervention.
+
+- [x] **V2.2.0 — Live Monitoring & TUI Integration via UDS IPC**
+  Unix Domain Socket IPC bridge between runtime process and TUI process.
+  `RuntimeIpcServer` listens on `/tmp/openntx_runtime.sock`.
+  `RuntimeIpcClient` sends JSON-line status updates during capture.
+  TUI displays real-time blinking banner: `⚠ [KERNEL] SYSTEM IS CAPTURING`.
 
 ---
 
-## V1.3.0 — Real-time Capture Engine
+## Core Subsystems — V2.x Execution Era
 
-The V1.3 capture system replaces the old snapshot-before/after + diff
-mechanism (which required two full directory scans and produced noisy,
-diff-based output) with a **streaming event model** built on Linux `inotify`.
+### Kernel Subsystem Execution (V2.0 & V2.1)
 
-### Architecture
+The `binfmt_misc` mechanism allows the Linux kernel to recognise custom
+executable formats. OpenNTX registers the PE format by writing the magic
+string `:OpenNTX:M::MZ::/usr/bin/openntx-runtime:OC` to
+`/proc/sys/fs/binfmt_misc/register`.
+
+From that moment, **every `.exe` file on the system** is intercepted by the
+kernel at the `execve()` level. The kernel sees the `MZ` header, matches the
+binfmt rule, and redirects execution to the OpenNTX runtime binary.
+
+**The Entrypoint (`RuntimeEntrypoint`):**
+
+```rust
+// parse_kernel_args: argv[0] = interpreter, argv[1] = PE path, argv[2..] = args
+let (exe_path, app_args) = RuntimeEntrypoint::parse_kernel_args(env_args)?;
+
+// dispatch_execution: SHA-256 -> profile lookup -> execute or fallback
+entrypoint.dispatch_execution(&exe_path, &app_args)?;
+```
+
+**Intelligent Auto-Fallback** — When a PE file has no existing profile:
+
+1. An isolated sandbox directory is created under
+   `~/.local/share/openntx/sandboxes/<app_id>/`.
+2. A `CaptureSession` starts inotify tracking on the entire sandbox tree.
+3. The PE is executed for the first time through Wine headless.
+4. Every `FileCreated` and `FileModified` event is collected.
+5. A `CompatProfile` is constructed from the captured paths (Windows-style
+   `C:\...` required paths, deduplicated and normalised).
+6. The profile is persisted to `~/.local/share/openntx/profiles/<app_id>.json`.
+7. All subsequent runs use the profile for guided isolation.
+
+The user never sees any of this. They double-click an `.exe` and it just works.
+
+**The Executor (`OpenNTXExecutor`):**
+
+- Validates PE magic bytes (`MZ` header check).
+- Computes SHA-256 hash for deterministic app identification.
+- Queries `ProfileManager` for existing `CompatProfile`.
+- Prepares isolated Wine prefix with `drive_c` structure.
+- Selects Wine binary based on architecture (x86 -> `wine`, x86_64 -> `wine64`).
+- Sets `WINEPREFIX`, `WINEDEBUG=-all`, `WINEESYNC=1` for clean isolation.
+- Suppresses all Wine stdout/stderr noise.
+
+### Real-time TUI IPC Bridge (V2.2)
+
+The runtime and the TUI are separate processes. They communicate through a
+**Unix Domain Socket** at `/tmp/openntx_runtime.sock` using a JSON-line
+protocol.
+
+**Protocol:**
+
+```json
+{"app_id":"notepadpp-a3f2","status":"Capturing","files_tracked":47}
+```
+
+**Server side (`RuntimeIpcServer`):**
+
+- Binds to `/tmp/openntx_runtime.sock` (removes stale socket on startup).
+- Non-blocking accept loop on a dedicated OS thread (100ms poll interval).
+- Reads newline-delimited JSON from each connection.
+- Forwards `CaptureStatusMessage`s through a `mpsc::Receiver` channel.
+- Auto-cleans socket file on `Drop`.
+
+**Client side (`RuntimeIpcClient`):**
+
+- Short-lived connections: connect -> write JSON line -> flush -> close.
+- `try_send_status()` for fire-and-forget (silently ignores missing server).
+- Integrated into `RuntimeEntrypoint::fallback_capture_and_execute()`:
+  sends `Capturing` -> `Executing` -> `Capturing(N files)` -> `Complete`.
+
+**TUI integration:**
+
+- `RuntimeIpcServer` spawned at AppPortal startup.
+- Forwarding thread converts IPC messages -> `AppEvent::IpcCaptureStatus`.
+- Tokio event loop delivers to `AppState::handle_ipc_capture_status()`.
+- Footer renders blinking banner with alternating Red/Yellow colors:
+
+```text
+  ⚠ [KERNEL] SYSTEM IS CAPTURING: Capturing: notepadpp-a3f2 — 47 files tracked
+```
+
+---
+
+## V1.3.0 — Real-time Capture Engine (Reference)
+
+The capture system uses Linux `inotify` with a dedicated OS thread.
 
 ```text
   ┌──────────────────────┐   inotify (non-blocking)   ┌─────────────────┐
@@ -120,106 +267,28 @@ diff-based output) with a **streaming event model** built on Linux `inotify`.
   └──────────────────────┘                             └─────────────────┘
 ```
 
-### How it works
-
-1. **Dicated OS thread** — `CaptureSession::start_tracking()` spawns a
-   dedicated OS thread (via `std::thread::Builder`) that owns the inotify
-   instance. This thread never touches the tokio async executor.
-
-2. **Non-blocking polling** — The inotify file descriptor is set to
-   `O_NONBLOCK` via `fcntl(F_SETFL)` immediately after `Inotify::init()`.
-   The thread calls `read_events()` in a tight loop; when no events are
-   queued, it receives `WouldBlock` and sleeps for 250 ms before retrying.
-   This sleep window also serves as the shutdown check: when the
-   `mpsc::Receiver` is dropped, the next `tx.send()` fails and the thread
-   exits cleanly.
-
-3. **Recursive auto-watch** — On startup, every subdirectory under the
-   target directory is registered with `inotify.add_watch()`. When a
-   `CREATE` + `ISDIR` event arrives (a new directory was created), the
-   tracker immediately adds a watch for it — so files created inside new
-   directories are captured without manual intervention.
-
-4. **Event filtering** — Only `CREATE`, `MODIFY`, and `DELETE` events are
-   forwarded. `ACCESS`, `OPEN`, `CLOSE_WRITE`, `ATTRIB`, and other
-   read-only metadata events are silently ignored.
-
-5. **Symlink rejection** — Consistent with the existing security model in
-   `snapshot.rs`: every directory is verified with `symlink_metadata()`
-   before watching, and the `DONT_FOLLOW` watch flag prevents the kernel
-   from following symlinks.
-
-### Events
-
-```rust
-pub enum CaptureEvent {
-    FileCreated(PathBuf),   // A file or directory was created
-    FileModified(PathBuf),  // A file was modified
-    FileDeleted(PathBuf),   // A file or directory was deleted
-}
-```
-
-### Test coverage
-
-9 tests covering: file creation, modification, deletion, nested directory
-events, file-in-new-subdirectory tracking, event ordering, receiver drop
-shutdown, and error paths.
+- **Non-blocking polling** — `O_NONBLOCK` via `fcntl(F_SETFL)`. 250ms sleep
+  between idle polls. Shutdown via receiver drop detection.
+- **Recursive auto-watch** — New directories (`CREATE + ISDIR`) are
+  automatically watched. Files created inside new subdirectories are captured.
+- **Event filtering** — Only `CREATE`, `MODIFY`, `DELETE`. All other inotify
+  events silently ignored.
+- **Symlink rejection** — `symlink_metadata()` + `DONT_FOLLOW` flag.
 
 ---
 
-## V1.4.0 — Debian Package Builder
+## V1.4.0 — Debian Package Builder (Reference)
 
-The V1.4 package builder takes a `CompatProfile` (from the V1.2 profile
-database) and produces a standards-compliant `.deb` package that installs
-the Windows application as a native Linux desktop application.
-
-### Build lifecycle
+Profile-driven `.deb` builder:
 
 ```text
-  CompatProfile
-       │
-       ▼
-  DebBuilder::new(profile)
-       │
-       ├── prepare_workspace()        ← /tmp/openntx_builder_<app_id>/
-       │     DEBIAN/                      control file goes here
-       │     opt/openntx/apps/<id>/       app files go here
-       │     usr/share/applications/      .desktop launcher goes here
-       │
-       ├── generate_control_file()    ← DEBIAN/control
-       │     Package, Version, Architecture (amd64/i386),
-       │     Depends: openntx-cli, Maintainer, Description
-       │
-       ├── generate_desktop_entry()   ← .desktop launcher
-       │     Exec=openntx run <app_id>
-       │     X-OpenNTX-AppId, X-OpenNTX-Publisher
-       │
-       └── build_deb()                ← dpkg-deb --root-owner-group --build
-             Cross-filesystem rename fallback (copy+remove)
-             Auto-cleanup staging on success
-             Preserved on failure for debugging
+  CompatProfile -> DebBuilder -> prepare_workspace() -> generate_control_file()
+                 -> generate_desktop_entry() -> build_deb() -> .deb output
 ```
 
-### Key design decisions
-
-- **Profile-driven** — Architecture, version, name, and publisher all come
-  from the `CompatProfile`. No manual configuration needed.
-- **Native desktop integration** — The `.desktop` file is installed to
-  `usr/share/applications/`, so the Windows application appears in the
-  system application menu alongside native Linux apps.
-- **Cross-filesystem safety** — The `.deb` is built in the system temp
-  directory (so Unix permission normalisation works on any filesystem),
-  then moved to the output directory with a `rename()` → `copy()+remove()`
-  fallback for cross-filesystem moves.
-- **Staging auto-cleanup** — The staging workspace is removed on success
-  and preserved on failure, so the user can inspect the build tree.
-
-### Test coverage
-
-10 tests covering: workspace structure, idempotency, control file content,
-architecture mapping (x86 → i386, x86_64 → amd64), desktop entry content,
-missing control file error, filename derivation, builder options, and
-dpkg-deb availability.
+- Architecture mapping: x86 -> `i386`, x86_64 -> `amd64`.
+- Cross-filesystem safety: `rename()` -> `copy()+remove()` fallback.
+- Staging auto-cleanup on success, preserved on failure.
 
 ---
 
@@ -231,19 +300,31 @@ dpkg-deb availability.
 
 ```text
 crates/
-  openntx-core       Core engine — data models, validation, path layout,
-                     PE analysis, manifest generation, compatibility
-                     profiles, real-time capture (inotify), package
-                     building (.deb), runtime planning, desktop
-                     integration, doctor, logs, config, sandbox.
+  openntx-core       Core engine — PE analysis, manifests, profiles,
+                     real-time capture (inotify), package building (.deb),
+                     runtime subsystem (binfmt, executor, entrypoint, IPC),
+                     desktop integration, doctor, logs, config, sandbox.
 
-  openntx-cli        Command-line interface for automation, diagnostics,
-                     and scripted workflows.  JSON output for every
-                     command.  Shell completions (bash, zsh, fish).
+  openntx-cli        CLI for automation and diagnostics. JSON output.
+                     Shell completions (bash, zsh, fish).
 
-  openntx-appportal  Async TUI frontend built with ratatui + crossterm.
-                     Dedicated OS thread for input polling.  Background
-                     worker tasks via tokio::task::spawn_blocking.
+  openntx-appportal  Async TUI (ratatui + crossterm). Dedicated OS thread
+                     for input. Tokio background workers. Live IPC bridge
+                     for real-time capture status display.
+```
+
+**Runtime module structure (`openntx-core/src/runtime/`):**
+
+```text
+  runtime/
+    mod.rs           Module root and re-exports
+    binfmt.rs        BinfmtManager — kernel binfmt_misc registration
+    executor.rs      OpenNTXExecutor — PE validation, sandbox, Wine launch
+    entrypoint.rs    RuntimeEntrypoint — kernel args, dispatch, auto-fallback
+    ipc.rs           RuntimeIpcServer/Client — UDS live status bridge
+    backend.rs       RuntimeBackend trait and execution plans
+    placeholder.rs   NotImplemented/External/Future backend stubs
+    run_plan.rs      Run-plan generation and logging
 ```
 
 **Key dependencies:**
@@ -251,16 +332,16 @@ crates/
 | Crate | Purpose |
 |---|---|
 | `ratatui` | Terminal UI rendering |
-| `crossterm` | Terminal input/output (raw mode, alternate screen) |
-| `tokio` | Async runtime for background tasks |
-| `serde` / `serde_json` | JSON serialization for manifests, profiles, configs |
-| `inotify` | Linux filesystem event monitoring (real-time capture) |
-| `libc` | Low-level POSIX calls (`fcntl`, `O_NONBLOCK`) |
-| `thiserror` | Structured error types |
-| `sha2` | SHA-256 hashing for integrity checks |
+| `crossterm` | Terminal I/O (raw mode, alternate screen) |
+| `tokio` | Async runtime for TUI event loop and workers |
+| `serde` / `serde_json` | JSON serialization (manifests, profiles, IPC) |
+| `inotify` | Linux filesystem event monitoring |
+| `libc` | POSIX calls (`fcntl`, `geteuid`, `O_NONBLOCK`) |
+| `thiserror` | Structured error types with `thiserror::Error` |
+| `sha2` | SHA-256 hashing for PE identification |
 | `tar` / `flate2` | Export/import bundle compression |
-| `dirs` | XDG-compliant data directory resolution |
-| `anyhow` | Error propagation in CLI |
+| `dirs` | XDG data directory resolution |
+| `tempfile` | Secure temporary directories (tests) |
 
 **Data formats:**
 
@@ -274,54 +355,28 @@ crates/
 
 ---
 
-## Towards V2.x — Execution & Integration
+## Test Coverage
 
-The V1.x series built the **identity and packaging layer**: every Windows
-application now has a manifest, a compatibility profile, captured filesystem
-and registry behaviour, and a native `.deb` package with a desktop launcher.
+**213 tests, 0 failures.** Full breakdown:
 
-V2.x will add the **execution layer**:
-
-- **`binfmt_misc` integration** — Register the OpenNTX runtime as a Linux
-  binary format handler so that `.exe` files are transparently executed
-  through the OpenNTX subsystem when double-clicked or invoked from the
-  shell.
-- **OpenNTX Runtime** — A sandboxed execution environment that reads the
-  compatibility profile at launch time, sets up the filesystem overlay,
-  applies registry mappings, enforces the sandbox policy, and runs the
-  Windows application inside an isolated Wine-compatible (but
-  Wine-independent) container.
-- **Runtime backend abstraction** — The `NotImplementedBackend` placeholder
-  will be replaced with real backends: a Wine-based compatibility backend
-  for broad application support, and a future native PE/NT/Win32 backend
-  for research.
-
-The compatibility profile database, the sandbox model, and the
-manifest-driven architecture exist specifically so that OpenNTX can evolve
-its own runtime without depending on external compatibility layers.
-
----
-
-## The Golden Rule
-
-> **OpenNTX will never become a Wine manager.**
-
-Wine is a compatibility layer that translates Windows API calls in real time.
-Proton is a Wine distribution optimised for gaming. Lutris, Bottles, and
-PlayOnLinux are prefix managers that wrap Wine with configuration UIs.
-
-OpenNTX is none of these.
-
-OpenNTX builds its own **application identity layer** — manifests, profiles,
-sandbox policies, filesystem mappings, registry overlays — so that a Windows
-application can be managed, isolated, and integrated into the Linux desktop
-as a structured, auditable entity.
-
-When a runtime backend is implemented, it will be an **OpenNTX service** —
-not a wrapper around Wine. The compatibility profile database, the sandbox
-model, and the manifest-driven architecture exist specifically so that
-OpenNTX can evolve its own runtime without depending on external compatibility
-layers.
+| Module | Tests | Coverage |
+|---|---|---|
+| `runtime::binfmt` | 12 | Registration string, MZ magic, root check, field count, custom path |
+| `runtime::executor` | 12 | PE detection, SHA-256, sandbox creation, Wine env, args passthrough |
+| `runtime::entrypoint` | 17 | Kernel args parsing, dispatch flow, fallback capture, profile build |
+| `runtime::ipc` | 9 | Message round-trip, server-client E2E, cleanup, error handling |
+| `profile` | 12 | CRUD, round-trip, arch serde, optional fields |
+| `capture::realtime` | 7 | inotify events, nested dirs, ordering, shutdown |
+| `capture::snapshot/diff` | 14 | Snapshots, diffs, symlinks, registry tracking |
+| `packaging::deb` | 10 | Control file, desktop entry, staging, dpkg-deb |
+| `builder::debian` | 10 | Workspace, control, desktop, options |
+| `pe_analyzer` | 6 | PE32/PE64 detection, imports, architecture |
+| `manifest` | 10 | Generation, validation, JSON schema |
+| `registry` | 9 | Registration, desktop, run-plan, remove |
+| `v1_alpha` | 33 | Config, doctor, rename, duplicate, export/import, logs |
+| `doctor` | 4 | Global/app diagnostics, repair |
+| Integration tests | 59 | End-to-end workflows |
+| Doc-tests | 7 | Compile-check all public doc examples |
 
 ---
 
@@ -334,14 +389,17 @@ cargo build --release
 # Analyse a Windows EXE
 ./target/release/openntx analyze /path/to/app.exe
 
-# Register an app and load its profile
+# Register an app
 ./target/release/openntx register /path/to/app.exe
 
-# Launch the TUI
+# Launch the TUI (IPC server starts automatically)
 ./target/release/openntx-appportal
 
 # Build a .deb package
 ./target/release/openntx package build <app-id> --yes
+
+# Register binfmt_misc (requires root)
+sudo ./target/release/openntx runtime register
 
 # Run doctor diagnostics
 ./target/release/openntx doctor --global
@@ -364,6 +422,28 @@ cargo build --release
 | [docs/testing.md](docs/testing.md) | Test strategy and coverage |
 | [ROADMAP.md](ROADMAP.md) | Detailed roadmap with milestones |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
+
+---
+
+## The Golden Rule
+
+> **OpenNTX will never become a Wine manager.**
+
+Wine is a compatibility layer. Proton is a Wine distribution. Lutris, Bottles,
+and PlayOnLinux are prefix managers.
+
+OpenNTX is a **subsystem**.
+
+It builds its own application identity layer — manifests, profiles, sandbox
+policies, filesystem mappings, registry overlays, kernel-level PE interception,
+and intelligent auto-capture — so that a Windows application can be managed,
+isolated, and integrated into the Linux desktop as a structured, auditable
+entity.
+
+The runtime uses Wine as an execution backend today. Tomorrow it may use
+something else. The compatibility profile database, the sandbox model, and the
+manifest-driven architecture exist specifically so that OpenNTX can evolve its
+own runtime without depending on any single external compatibility layer.
 
 ---
 

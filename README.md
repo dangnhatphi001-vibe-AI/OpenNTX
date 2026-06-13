@@ -12,21 +12,22 @@
 
 <p align="center">
   <a href="https://github.com/openntx/openntx/actions/workflows/ci.yml"><img src="https://github.com/openntx/openntx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/version-v2.5.0--alpha-brightgreen" alt="Version">
+  <img src="https://img.shields.io/badge/version-v2.6.0--alpha-brightgreen" alt="Version">
   <img src="https://img.shields.io/badge/era-Execution%20%26%20Subsystem-critical" alt="Era">
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="License">
   <img src="https://img.shields.io/badge/runtime-LIVE-brightgreen" alt="Runtime">
 </p>
 
-> **Version: v2.5.0-alpha — The Execution, Hardening & Graphics Era**
+> **Version: v2.6.0-alpha — The Execution, Hardening, Graphics & Registry Era**
 >
 > OpenNTX has crossed the Rubicon. The V1.x identity layer is complete.
 > The kernel now recognises `.exe` files natively, the runtime executes them
 > in isolated sandboxes with cgroups v2 resource governance and namespace
 > isolation, the reaper engine culls zombie processes, the TUI monitors
-> every capture event in real time through a live IPC bridge, and the
+> every capture event in real time through a live IPC bridge, the
 > graphics stub provides virtual window surfaces for Windows GDI/DirectX
-> applications. This is no longer a planning tool — **it is a subsystem.**
+> applications, and the isolated registry engine emulates Windows Registry
+> hives via per-app TOML files. This is no longer a planning tool — **it is a subsystem.**
 
 ---
 
@@ -184,6 +185,12 @@ learns.
   applications. Headless mode: memory-mapped RGBA framebuffer files.
   X11 mode: display connection intent recorded. `map_gdi_flush` receives
   raw pixel data from the Windows emulation layer.
+
+- [x] **V2.6.0 — Isolated Registry Emulation**
+  `VirtualRegistry` emulates Windows Registry hive structure (HKLM, HKCU,
+  etc.) using per-app TOML files in the sandbox. `get_value`/`set_value`
+  with immediate disk flush. Supports nested key paths, value listing,
+  deletion, and TOML persistence across process restarts.
 
 ---
 
@@ -343,6 +350,7 @@ crates/
     cgroups.rs       ResourceGovernor — cgroups v2 memory/CPU limits
     reaper.rs        ReaperEngine — SIGTERM/SIGKILL process reaping
     graphics.rs      WindowStubManager — virtual HWND & framebuffer
+    registry.rs      VirtualRegistry — isolated Windows Registry emulation
     backend.rs       RuntimeBackend trait and execution plans
     placeholder.rs   NotImplemented/External/Future backend stubs
     run_plan.rs      Run-plan generation and logging
@@ -378,7 +386,7 @@ crates/
 
 ## Test Coverage
 
-**286 tests, 0 failures.** Full breakdown:
+**311 tests, 0 failures.** Full breakdown:
 
 | Module | Tests | Coverage |
 |---|---|---|
@@ -389,6 +397,7 @@ crates/
 | `runtime::cgroups` | 17 | Path generation, sanitization, cpu_max_from_percent, apply_limits, cleanup |
 | `runtime::reaper` | 19 | PID parsing, SIGTERM/SIGKILL flow, cgroup cleanup, signal helpers |
 | `runtime::graphics` | 22 | Surface creation, HWND allocation, GDI flush, framebuffer I/O, destruction |
+| `runtime::registry` | 24 | Write-then-read, persistence, TOML validation, hive CRUD, key normalization |
 | `profile` | 12 | CRUD, round-trip, arch serde, optional fields |
 | `capture::realtime` | 7 | inotify events, nested dirs, ordering, shutdown |
 | `capture::snapshot/diff` | 14 | Snapshots, diffs, symlinks, registry tracking |

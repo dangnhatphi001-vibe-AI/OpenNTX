@@ -71,7 +71,14 @@ pub enum OpenNtxError {
 
     #[error("cgroup cleanup failed: {0}")]    CgroupCleanupFailed(String),
 
-    #[error("graphics context creation failed: {0}")]    GraphicsContextCreationFailed(String),
+    #[error("graphics context creation failed: {0}")]
+    GraphicsContextCreationFailed(String),
+
+    #[error("registry storage error: {0}")]
+    RegistryStorageError(String),
+
+    #[error("registry key invalid: {0}")]
+    RegistryKeyInvalid(String),
 }
 
 pub type Result<T> = std::result::Result<T, OpenNtxError>;

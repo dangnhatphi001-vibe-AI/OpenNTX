@@ -1,41 +1,44 @@
 ---
 name: Feature request
-about: Propose a scoped OpenNTX capability
-title: "feature: "
+about: Suggest an OpenNTX feature
+title: "[Feature]: "
 labels: enhancement
 assignees: ""
 ---
 
 ## Summary
 
-Describe the requested capability.
+Describe the feature.
 
 ## Problem
 
-What user or developer problem does this solve?
+What problem does this solve?
 
-## Proposed Design
+## Proposed solution
 
-Explain the intended behavior and affected subsystem:
+Describe the behavior you want.
 
-- core
-- CLI
-- AppPortal
-- manifest
-- sandbox
-- desktop integration
-- installer capture
-- runtime backend
-- packaging
+## Scope
 
-## Security and Sandboxing
+- [ ] PE analyzer
+- [ ] Manifest generator
+- [ ] App registry
+- [ ] Desktop launcher
+- [ ] Run-plan diagnostics
+- [ ] Capture snapshot/diff
+- [ ] Debian packaging
+- [ ] AppPortal UI
+- [ ] Runtime design
+- [ ] Documentation
+- [ ] Security hardening
 
-What permissions, isolation boundaries, or threat-model changes are involved?
+## Safety notes
 
-## Compatibility Claim
+Does this require executing Windows binaries, installers, or external runtimes?
 
-What exact compatibility level should be claimed after implementation?
+If yes, explain why and how it should stay safe.
 
-## Non-Goals
+## Additional context
 
-List what this feature should not do.
+Add screenshots, logs, examples, diagrams, or links if useful.
+

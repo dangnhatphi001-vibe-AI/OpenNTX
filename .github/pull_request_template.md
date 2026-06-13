@@ -1,32 +1,42 @@
 ## Summary
 
-- 
+Describe what this PR changes.
 
-## Scope
+## Type of change
 
-- [ ] Core
-- [ ] CLI
-- [ ] AppPortal
-- [ ] Docs
-- [ ] Schemas/examples
+- [ ] Bug fix
+- [ ] Feature
+- [ ] Refactor
+- [ ] Documentation
 - [ ] Tests
-- [ ] CI/tooling
+- [ ] Security hardening
+- [ ] Packaging
+- [ ] UI/AppPortal
 
-## Verification
+## Checklist
+
+- [ ] I did not change licensing terms.
+- [ ] I did not add Windows binary execution.
+- [ ] I did not run installers.
+- [ ] I did not call Wine, Proton, Bottles, Lutris, or external runtimes.
+- [ ] I kept OpenNTX claims honest and analysis-only where applicable.
+- [ ] I kept changes scoped and maintainable.
+- [ ] I added or updated tests where appropriate.
+- [ ] I updated documentation where appropriate.
+- [ ] I ran `cargo fmt --all`.
+- [ ] I ran `cargo build --workspace`.
+- [ ] I ran `cargo test --workspace`.
+- [ ] I ran `bash tools/dev-check.sh`.
+
+## Testing
 
 ```bash
-cargo fmt --all -- --check
-cargo build --workspace
-cargo test --workspace
-tools/dev-check.sh
+# Paste test commands and output summary here
 ```
 
-## Compatibility and Security Notes
+## Security notes
+Describe any relevant safety, filesystem, symlink, sandbox, package, or execution-boundary considerations.
 
-- Does this change any compatibility claim?
-- Does this change sandbox, filesystem, registry, network, desktop, or packaging behavior?
-- Does this avoid implementing or implying unsupported Windows runtime execution?
+## Notes
+Add any design notes, tradeoffs, or follow-up tasks here.
 
-## Contributor Terms
-
-- [ ] I agree to `CONTRIBUTOR-LICENSE-TERMS.md`.

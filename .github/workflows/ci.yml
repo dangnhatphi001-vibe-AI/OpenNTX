@@ -36,3 +36,4 @@ jobs:
 
       - name: Run OpenNTX dev check
         run: bash tools/dev-check.sh
+

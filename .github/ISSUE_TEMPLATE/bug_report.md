@@ -1,46 +1,42 @@
 ---
 name: Bug report
-about: Report a reproducible OpenNTX defect
-title: "bug: "
+about: Report a reproducible OpenNTX bug
+title: "[Bug]: "
 labels: bug
 assignees: ""
 ---
 
 ## Summary
 
-Describe the defect clearly.
+Describe the bug clearly.
 
 ## Environment
 
-- OpenNTX commit or version:
-- Linux distribution:
-- Desktop environment:
-- Rust version, if building from source:
+- OS:
+- OpenNTX version:
+- Rust version:
+- Command used:
 
-## Steps to Reproduce
+## Steps to reproduce
 
-1.
-2.
-3.
-
-## Expected Behavior
-
-What should have happened?
-
-## Actual Behavior
-
-What happened instead?
-
-## Logs or Output
-
-```text
-paste relevant command output here
+```bash
+# Paste commands here
 ```
 
-## Security Impact
+## Expected behavior
+What should happen?
 
-Does this involve EXE handling, sandboxing, filesystem access, registry overlays, desktop entries, or permissions?
+## Actual behavior
+What happened instead?
 
-## Compatibility Claim Check
+## Logs/output
 
-OpenNTX V0.5 does not execute Windows applications. Do not report "app does not run" as a runtime bug unless the issue is about documented dry-run behavior, analysis, manifest generation, schemas, docs, or planning output.
+```
+Paste relevant output here.
+```
+
+## Notes
+OpenNTX currently does not execute Windows binaries or installers.
+
+Missing runtime execution is not a bug unless the issue is about incorrect messaging, planning behavior, metadata generation, app registry state, capture reports, packaging, or documentation.
+

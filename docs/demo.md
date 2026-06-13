@@ -1,6 +1,6 @@
 # OpenNTX Demo Guide
 
-This guide walks through the real V0.9 analysis and packaging flow using a Windows PE/EXE file.
+This guide walks through the real V1.0-alpha analysis and packaging flow using a Windows PE/EXE file.
 
 **OpenNTX does not execute Windows binaries.** Every step is analysis, metadata, or packaging only.
 
@@ -123,10 +123,65 @@ dpkg-deb -c dist/*.deb | head -100
 
 Verify:
 
-- Version shows `0.9.0` (or your specified version).
+- Version shows `1.0.0-alpha` (or your specified version).
 - Owner is `root/root`.
 - `.json` and `.desktop` files show `-rw-r--r--` (0644).
 - Directories show `drwxr-xr-x` (0755).
+
+## Step 9: Doctor Diagnostics
+
+```bash
+# Global health check
+openntx doctor
+
+# Per-app check
+openntx doctor <app-id>
+
+# Repair missing directories
+openntx doctor <app-id> --repair --yes
+```
+
+## Step 10: App Management
+
+```bash
+# Rename an app
+openntx rename <app-id> "My App Name" --yes
+
+# Duplicate an app
+openntx duplicate <app-id> --as <new-app-id> --yes
+
+# Export as bundle
+openntx export <app-id> --output backup.tar.gz --yes
+
+# Import a bundle
+openntx import backup.tar.gz --yes
+```
+
+## Step 11: Logs
+
+```bash
+# List run-plan logs
+openntx logs list
+
+# Show latest log for an app
+openntx logs show <app-id>
+
+# Clean old logs
+openntx logs clean --older-than-days 30 --yes
+```
+
+## Step 12: Configuration
+
+```bash
+# Show current config
+openntx config show
+
+# Initialize config file
+openntx config init
+
+# Set a value
+openntx config set log_retention_days 60
+```
 
 ## AppPortal Demo
 
@@ -141,9 +196,11 @@ From AppPortal:
 1. Open **Library** to view registered apps.
 2. Use **Analyze EXE** to inspect a PE file and preview a manifest.
 3. Use **Write Install Plan** to register app metadata after confirmation.
-4. Use **Desktop Launcher** to create or remove a launcher.
-5. Use **Capture** to run snapshot/diff/report per app.
-6. Use **Settings** to view paths and defaults.
+4. Use **Capture Tools** to run snapshot/diff/report per app.
+5. Use **Package Builder** to build .deb packages.
+6. Use **Logs** to view run-plan logs.
+7. Use **Doctor** to run diagnostics.
+8. Use **Settings** to view paths and defaults.
 
 ## What This Demo Does Not Do
 

@@ -27,6 +27,9 @@ pub enum CaptureCommands {
         app_id: String,
         #[arg(long)]
         json: bool,
+        /// Show compact summary only
+        #[arg(long)]
+        summary: bool,
     },
     /// Generate a capture report from diff
     Report {
@@ -43,6 +46,14 @@ pub enum CaptureCommands {
         app_id: String,
         #[arg(long)]
         json: bool,
+    },
+    /// Clean capture artifacts for an app
+    Clean {
+        /// The registered app ID
+        #[arg(value_name = "app-id")]
+        app_id: String,
+        #[arg(long)]
+        yes: bool,
     },
 }
 
@@ -91,10 +102,28 @@ pub fn execute(command: CaptureCommands) -> Result<()> {
                 output::note("Capture snapshots only inspect OpenNTX-managed app directories. No installer is executed.");
             }
         }
-        CaptureCommands::Diff { app_id, json } => {
+        CaptureCommands::Diff {
+            app_id,
+            json,
+            summary,
+        } => {
             let result = service.diff(&app_id)?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&result.diff)?);
+            } else if summary {
+                output::title("OpenNTX Capture Diff Summary");
+                output::field("App ID", &app_id);
+                output::field("Files created", result.diff.files_created.len());
+                output::field("Files removed", result.diff.files_removed.len());
+                output::field("Files modified", result.diff.files_modified.len());
+                output::field("Directories created", result.diff.directories_created.len());
+                output::field("Directories removed", result.diff.directories_removed.len());
+                output::field("Symlinks created", result.diff.symlinks_created.len());
+                output::field("Symlinks removed", result.diff.symlinks_removed.len());
+                output::field(
+                    "Registry files changed",
+                    result.diff.registry_files_changed.len(),
+                );
             } else {
                 output::title("OpenNTX Capture Diff");
                 output::field("App ID", &app_id);
@@ -195,6 +224,60 @@ pub fn execute(command: CaptureCommands) -> Result<()> {
                 output::note("Capture snapshots only inspect OpenNTX-managed app directories. No installer is executed.");
             }
         }
+        CaptureCommands::Clean { app_id, yes } => {
+            clean_capture(&app_id, yes)?;
+        }
     }
+    Ok(())
+}
+
+fn clean_capture(app_id: &str, yes: bool) -> Result<()> {
+    use openntx_core::registry::AppRegistry;
+    use std::fs;
+
+    let registry = AppRegistry::from_env()?;
+    let capture_dir = registry.paths().capture_dir(app_id);
+
+    if !capture_dir.exists() {
+        output::title("OpenNTX Capture Clean");
+        output::field("App ID", app_id);
+        output::note("No capture directory found. Nothing to clean.");
+        return Ok(());
+    }
+
+    let files_to_clean = [
+        "snapshot-before.json",
+        "snapshot-after.json",
+        "capture-diff.json",
+        "capture-report.json",
+    ];
+
+    let mut found = Vec::new();
+    for name in &files_to_clean {
+        let path = capture_dir.join(name);
+        if path.exists() {
+            found.push(path);
+        }
+    }
+
+    output::title("OpenNTX Capture Clean");
+    output::field("App ID", app_id);
+    output::field("Files to remove", found.len());
+    for path in &found {
+        output::field("  ", path.display());
+    }
+
+    if !yes {
+        output::blank();
+        output::note("Dry-run only. Pass --yes to remove capture artifacts.");
+        return Ok(());
+    }
+
+    for path in &found {
+        fs::remove_file(path).map_err(|source| openntx_core::OpenNtxError::io(path, source))?;
+    }
+
+    output::blank();
+    output::note(&format!("Removed {} capture artifact(s).", found.len()));
     Ok(())
 }

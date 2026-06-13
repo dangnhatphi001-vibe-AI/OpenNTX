@@ -2,7 +2,7 @@
 
 AppPortal is the user-friendly frontend for OpenNTX. It is not the runtime and must not contain compatibility-layer logic.
 
-V0.8 provides a lightweight terminal UI that reads the real OpenNTX app registry from:
+V1.0-alpha provides a lightweight terminal UI that reads the real OpenNTX app registry from:
 
 ```text
 ~/.local/share/openntx/apps/
@@ -16,8 +16,18 @@ The home screen shows:
 
 - OpenNTX version.
 - Registered app count.
-- Runtime status: not implemented yet.
-- Actions for Library, Analyze EXE, Install Plan, Desktop Launcher, Capture, Settings, and Quit.
+- Runtime status: not implemented (analysis-only).
+- CI/status: V1.0-alpha feature pack.
+- Actions:
+  1. Library
+  2. Analyze EXE
+  3. Write Install Plan
+  4. Capture Tools
+  5. Package Builder
+  6. Logs
+  7. Doctor
+  8. Settings
+  Q. Quit
 
 ## App Library
 
@@ -61,17 +71,37 @@ Available actions:
 - Capture: Report.
 - Capture: Status.
 - Package (.deb) — dry-run plan first, build only after confirmation.
+- Show logs — latest run-plan log for the app.
+- Doctor — per-app diagnosis.
 - Dry-run remove app.
 - Remove app with explicit app-id confirmation.
 - Back.
 
-Run plan remains honest: runtime execution is not implemented in V0.8. AppPortal uses the same core run-plan logic as `openntx run <app-id>` and writes a diagnostics log under:
+Run plan remains honest: runtime execution is not implemented. AppPortal uses the same core run-plan logic as `openntx run <app-id>` and writes a diagnostics log under:
 
 ```text
 ~/.local/state/openntx/logs/
 ```
 
-The run-plan screen displays real app metadata including target, app ID, name, executable path, architecture, install mode, sandbox profile, imported DLL count, desktop status, backend, status, and a UTC timestamp. It explicitly states that the app is registered but runtime execution is not implemented.
+## Doctor
+
+The Doctor screen provides:
+
+- **Global diagnosis** — data directory, app count, broken apps, logs directory, desktop entries, dpkg-deb availability, notify-send availability.
+- **Per-app diagnosis** — manifest validity, install plan, drive_c, registry, capture directory, desktop entry, symlinks, and warnings.
+- **Safe repair** (dry-run) — shows what repairs would be made without applying them.
+
+## Logs
+
+The Logs screen lists recent run-plan logs and allows viewing details for any log.
+
+## Packaging
+
+The Packaging screen:
+
+1. Lists registered apps.
+2. Shows a dry-run package plan for the selected app.
+3. Builds the .deb package only after explicit confirmation.
 
 ## Analyze EXE
 

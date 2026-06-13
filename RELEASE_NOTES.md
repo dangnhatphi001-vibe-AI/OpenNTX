@@ -1,11 +1,14 @@
-# OpenNTX v0.9.0 — Debian Package Builder Prototype
+# OpenNTX v1.0.0-alpha — V1.0-alpha Feature Pack
 
 ## Highlights
 
-- **Debian .deb package builder** — build root-owned `.deb` packages from registered OpenNTX apps with correct file permissions (0644 for files, 0755 for directories).
-- **Installer capture snapshot/diff infrastructure** — snapshot app directory state, compute filesystem diffs, generate capture reports.
-- **AppPortal capture actions** — Snapshot Before/After, Diff, Report, Status from the terminal UI.
-- **Security hardening** — `symlink_metadata()` for safe file inspection, `--root-owner-group` for package ownership, staging in temp dir for reliable permissions on all filesystems.
+- **App management** — rename, duplicate, export/import bundles with safety checks.
+- **Doctor / integrity checks** — global and per-app health diagnostics with safe repair.
+- **Logs management** — list, show, and clean run-plan logs.
+- **Config system** — persistent configuration via `openntx config`.
+- **Shell completions** — bash, zsh, fish via `openntx completions`.
+- **AppPortal V1.0-alpha** — redesigned TUI with Library, Capture, Package Builder, Logs, Doctor, Settings.
+- **33 new tests** covering security boundaries and all new features.
 
 ## What Works Today
 
@@ -16,7 +19,12 @@
 - Run-plan diagnostics with real app metadata, JSON logs, and desktop notifications.
 - Capture snapshot/diff infrastructure for OpenNTX app directories.
 - Build `.deb` packages with proper permissions and root ownership.
-- AppPortal TUI for browsing, analyzing, capturing, and packaging.
+- Rename, duplicate, export, and import registered apps.
+- Global and per-app diagnostics with safe repair.
+- List, show, and clean run-plan logs.
+- Persistent configuration file.
+- Shell completions for bash, zsh, fish.
+- AppPortal TUI with comprehensive app management.
 
 ## What Remains Analysis-Only
 
@@ -31,7 +39,38 @@
 - PE analysis reads headers and metadata only; no code is executed.
 - Capture snapshots inspect OpenNTX app directories only.
 - The `.deb` package builder uses `symlink_metadata()` to reject symlinks, sets 0644/0755 permissions, stages in a temp dir, and builds with `--root-owner-group`.
+- Bundle export/import rejects path traversal and symlink escapes.
+- Doctor repair refuses to follow unsafe symlinks.
+- All destructive operations are dry-run by default; `--yes` required for writes.
 - No Windows binary, installer, or external runtime is ever executed.
+
+## New CLI Commands
+
+```
+openntx rename <app-id> <new-name> [--yes]
+openntx duplicate <app-id> --as <new-app-id> [--yes]
+openntx export <app-id> --output <path> [--yes]
+openntx import <bundle-path> [--as <new-app-id>] [--yes]
+openntx list --json
+openntx show <app-id> --json
+openntx doctor [--json]
+openntx doctor <app-id> [--json] [--repair --yes]
+openntx logs list [--json]
+openntx logs show <path-or-app-id> [--json]
+openntx logs clean --older-than-days <N> [--yes]
+openntx capture clean <app-id> [--yes]
+openntx capture diff <app-id> --summary
+openntx capture report <app-id> --json
+openntx capture status <app-id> --json
+openntx package inspect <deb-file>
+openntx package clean [--yes]
+openntx package build <app-id> --keep-staging [--yes]
+openntx config show
+openntx config init
+openntx config set <key> <value>
+openntx config reset [--yes]
+openntx completions <shell>
+```
 
 ## Manual Test Commands
 
@@ -42,21 +81,37 @@ cargo install --path crates/openntx-cli --force
 # Register an app
 openntx install ~/Downloads/setup.exe --write-plan
 
-# List registered apps
-openntx list
+# List registered apps (JSON)
+openntx list --json
 
-# Capture workflow
-openntx capture snapshot-before <app-id>
-openntx capture snapshot-after <app-id>
-openntx capture diff <app-id>
-openntx capture report <app-id>
+# Show app details (JSON)
+openntx show <app-id> --json
+
+# Doctor
+openntx doctor
+openntx doctor <app-id>
+openntx doctor <app-id> --repair --yes
+
+# Logs
+openntx logs list
+openntx logs show <app-id>
+
+# App management
+openntx rename <app-id> "New Name" --yes
+openntx duplicate <app-id> --as <new-id> --yes
+openntx export <app-id> --output backup.tar.gz --yes
+openntx import backup.tar.gz --yes
 
 # Build a .deb package
 openntx package build <app-id> --yes
+openntx package inspect dist/*.deb
 
-# Inspect the package
-dpkg-deb -I dist/*.deb
-dpkg-deb -c dist/*.deb | head -100
+# Config
+openntx config show
+openntx config init
+
+# Shell completions
+openntx completions bash
 ```
 
 ## Known Limitations
@@ -66,10 +121,11 @@ dpkg-deb -c dist/*.deb | head -100
 - AppPortal is a terminal UI; no GTK/libadwaita frontend yet.
 - Capture reports are analysis-only; no real installer execution occurs.
 - No Wine, Proton, Bottles, or Lutris integration.
+- Config uses JSON (not TOML) to avoid additional dependencies.
 
-## Next Milestone: V1.0-alpha Polish
+## Next Milestone: V1.1
 
-- README and documentation polish.
-- GitHub release with CI, visual assets, and demo documentation.
 - AppPortal screenshots and terminal captures.
-- No new runtime execution planned for V1.0-alpha.
+- Visual assets refresh.
+- GitHub release with tags and release notes.
+- No new runtime execution planned.

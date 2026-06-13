@@ -2,8 +2,15 @@ use crate::output;
 use openntx_core::registry::AppRegistry;
 use openntx_core::Result;
 
-pub fn run(app_id: &str) -> Result<()> {
+pub fn run(app_id: &str, json: bool) -> Result<()> {
     let registry = AppRegistry::from_env()?;
+
+    if json {
+        let summary = registry.show_app_json(app_id)?;
+        println!("{}", serde_json::to_string_pretty(&summary)?);
+        return Ok(());
+    }
+
     let manifest = registry.load_manifest(app_id)?;
     let desktop_entry = registry.paths().desktop_entry_path(app_id);
 

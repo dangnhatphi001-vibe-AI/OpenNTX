@@ -21,8 +21,26 @@ pub enum OpenNtxError {
     #[error("unsupported operation: {0}")]
     Unsupported(String),
 
-    #[error("not implemented in OpenNTX V0.8: {0}")]
+    #[error("not implemented in OpenNTX V1.0-alpha: {0}")]
     NotImplemented(String),
+
+    #[error("unsafe path: {0}")]
+    UnsafePath(String),
+
+    #[error("config error: {0}")]
+    Config(String),
+
+    #[error("app not found: {0}")]
+    AppNotFound(String),
+
+    #[error("already exists: {0}")]
+    AlreadyExists(String),
+
+    #[error("tool not available: {0}")]
+    ToolNotAvailable(String),
+
+    #[error("diagnostic warning: {0}")]
+    Diagnostic(String),
 }
 
 pub type Result<T> = std::result::Result<T, OpenNtxError>;

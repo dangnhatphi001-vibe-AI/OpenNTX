@@ -2,9 +2,9 @@
 
 Windows EXE files are untrusted input. OpenNTX must treat installers and applications as potentially malicious unless the user explicitly trusts them.
 
-## V0.1 Status
+## V1.0-alpha Status
 
-OpenNTX V0.7 does not execute Windows binaries. It analyzes PE metadata, generates manifests, writes local registry plans, writes desktop launchers, exposes a registry-backed AppPortal TUI, validates input, models app state, and documents future runtime architecture.
+OpenNTX V1.0-alpha does not execute Windows binaries. It analyzes PE metadata, generates manifests, writes local registry plans, writes desktop launchers, manages app lifecycle (rename, duplicate, export/import), runs diagnostics, manages logs, and exposes a registry-backed AppPortal TUI. All operations are analysis-only.
 
 ## Security Principles
 

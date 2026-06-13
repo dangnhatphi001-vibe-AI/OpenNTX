@@ -1,6 +1,8 @@
 use crate::ui::{app_library, home, install_wizard, settings};
 use openntx_core::app_id::generate_app_id;
 use openntx_core::capture::CaptureRegistryService;
+use openntx_core::doctor::{app_doctor, global_doctor, repair_app};
+use openntx_core::logs::{list_logs, show_log};
 use openntx_core::manifest::{
     generate_manifest_from_pe, AppManifest, GeneratedManifest, ManifestGenerationInput,
 };
@@ -44,9 +46,11 @@ impl AppPortalApp {
                 "l" | "1" => self.library_screen()?,
                 "a" | "2" => self.analyze_exe_screen()?,
                 "i" | "3" => self.install_plan_screen()?,
-                "d" | "4" => self.desktop_launcher_screen()?,
-                "c" | "5" => self.capture_screen()?,
-                "s" | "6" => self.settings_screen()?,
+                "c" | "4" => self.capture_screen()?,
+                "p" | "5" => self.packaging_screen()?,
+                "lg" | "6" => self.logs_screen()?,
+                "d" | "7" => self.doctor_screen()?,
+                "s" | "8" => self.settings_screen()?,
                 "q" => break,
                 "" => {}
                 _ => pause("Unknown action.")?,
@@ -110,7 +114,18 @@ impl AppPortalApp {
                 value if value.eq_ignore_ascii_case("4") => self.capture_report_screen(app_id)?,
                 value if value.eq_ignore_ascii_case("5") => self.capture_status_screen(app_id)?,
                 value if value.eq_ignore_ascii_case("p") => self.package_screen(app_id)?,
-                value if value.eq_ignore_ascii_case("d") => {
+                value if value.eq_ignore_ascii_case("l") => self.show_app_log_screen(app_id)?,
+                value if value.eq_ignore_ascii_case("dd") => {
+                    let report = app_doctor(&self.registry, app_id)?;
+                    clear_screen();
+                    println!("Doctor: {app_id}");
+                    println!("Status: {}", report.status);
+                    for w in &report.warnings {
+                        println!("  ! {w}");
+                    }
+                    pause("Press Enter.")?;
+                }
+                value if value.eq_ignore_ascii_case("dr") => {
                     self.remove_app_dry_run_screen(app_id)?
                 }
                 value if value.eq_ignore_ascii_case("delete") => {
@@ -192,42 +207,6 @@ impl AppPortalApp {
             pause("Install plan not written.")?;
         }
         Ok(())
-    }
-
-    fn desktop_launcher_screen(&mut self) -> Result<()> {
-        loop {
-            let apps = self.registry.list_apps()?;
-            clear_screen();
-            println!("OpenNTX Desktop Launcher");
-            println!("------------------------");
-            if apps.is_empty() {
-                pause("No registered apps. Press Enter to return.")?;
-                return Ok(());
-            }
-            print_numbered_apps(&apps);
-
-            let input = prompt("Select app number or [B] Back")?;
-            if input.eq_ignore_ascii_case("b") {
-                return Ok(());
-            }
-            let Some(index) = parse_menu_index(&input, apps.len()) else {
-                pause("Invalid app selection.")?;
-                continue;
-            };
-            let app_id = apps[index].app_id.clone();
-            clear_screen();
-            println!("Desktop launcher for {app_id}");
-            println!("-----------------------------");
-            println!("[C] Create launcher");
-            println!("[x] Remove launcher");
-            println!("[B] Back");
-            match prompt("Select action")?.as_str() {
-                value if value.eq_ignore_ascii_case("c") => self.create_desktop_screen(&app_id)?,
-                value if value.eq_ignore_ascii_case("x") => self.remove_desktop_screen(&app_id)?,
-                value if value.eq_ignore_ascii_case("b") => {}
-                _ => pause("Unknown desktop action.")?,
-            }
-        }
     }
 
     fn settings_screen(&self) -> Result<()> {
@@ -590,6 +569,32 @@ impl AppPortalApp {
         Ok(())
     }
 
+    fn show_app_log_screen(&self, app_id: &str) -> Result<()> {
+        match show_log(&self.registry, app_id) {
+            Ok(report) => {
+                clear_screen();
+                println!("Run-Plan Log for {app_id}");
+                println!("-------------------------");
+                println!("Name: {}", report.name);
+                println!("Timestamp: {}", report.timestamp);
+                println!("Executable: {}", report.executable_path);
+                println!("Architecture: {}", report.architecture);
+                println!("Status: {}", report.status);
+                println!("Backend: {}", report.backend);
+                if let Some(log_path) = &report.log_path {
+                    println!("Log path: {log_path}");
+                }
+                println!();
+                println!("{}", report.message);
+            }
+            Err(_) => {
+                clear_screen();
+                println!("No run-plan log found for {app_id}.");
+            }
+        }
+        pause("Press Enter to return.")
+    }
+
     fn remove_app_dry_run_screen(&self, app_id: &str) -> Result<()> {
         let plan = self.registry.remove_app(app_id, RemoveMode::DryRun)?;
         clear_screen();
@@ -669,6 +674,361 @@ impl AppPortalApp {
             generated,
             install_plan,
         })
+    }
+
+    fn doctor_screen(&self) -> Result<()> {
+        loop {
+            clear_screen();
+            println!("OpenNTX Doctor");
+            println!("--------------");
+            println!("[1] Global diagnosis");
+            println!("[2] App diagnosis");
+            println!("[B] Back");
+            match prompt("Select action")?.as_str() {
+                value if value.eq_ignore_ascii_case("1") => self.doctor_global_screen()?,
+                value if value.eq_ignore_ascii_case("2") => self.doctor_app_screen()?,
+                value if value.eq_ignore_ascii_case("b") => return Ok(()),
+                "" => {}
+                _ => pause("Unknown action.")?,
+            }
+        }
+    }
+
+    fn doctor_global_screen(&self) -> Result<()> {
+        let report = global_doctor(&self.registry)?;
+        clear_screen();
+        println!("OpenNTX Doctor - Global");
+        println!("-----------------------");
+        println!(
+            "Data directory: {} ({})",
+            report.data_dir_path,
+            if report.data_dir_exists {
+                "exists"
+            } else {
+                "missing"
+            }
+        );
+        println!("Registered apps: {}", report.app_count);
+        println!("Broken apps: {}", report.broken_app_count);
+        if !report.broken_apps.is_empty() {
+            for app_id in &report.broken_apps {
+                println!("  Broken: {app_id}");
+            }
+        }
+        println!(
+            "Logs directory: {} ({}, writable={})",
+            report.logs_dir_path,
+            if report.logs_dir_exists {
+                "exists"
+            } else {
+                "missing"
+            },
+            report.logs_dir_writable
+        );
+        println!(
+            "Desktop entries: {}",
+            if report.desktop_entries_dir_exists {
+                "exists"
+            } else {
+                "missing"
+            }
+        );
+        println!(
+            "dpkg-deb: {}",
+            if report.dpkg_deb_available {
+                "available"
+            } else {
+                "not available"
+            }
+        );
+        println!(
+            "notify-send: {}",
+            if report.notify_send_available {
+                "available"
+            } else {
+                "not available"
+            }
+        );
+        if !report.warnings.is_empty() {
+            println!();
+            println!("Warnings:");
+            for w in &report.warnings {
+                println!("  ! {w}");
+            }
+        }
+        println!();
+        println!("Status: {}", report.status);
+        pause("Press Enter to return.")
+    }
+
+    fn doctor_app_screen(&self) -> Result<()> {
+        let apps = self.registry.list_apps()?;
+        if apps.is_empty() {
+            clear_screen();
+            println!("No registered apps.");
+            pause("Press Enter to return.")?;
+            return Ok(());
+        }
+        clear_screen();
+        println!("OpenNTX Doctor - Select App");
+        println!("---------------------------");
+        print_numbered_apps(&apps);
+        let input = prompt("Select app number or [B] Back")?;
+        if input.eq_ignore_ascii_case("b") {
+            return Ok(());
+        }
+        let Some(index) = parse_menu_index(&input, apps.len()) else {
+            pause("Invalid selection.")?;
+            return Ok(());
+        };
+        let app_id = apps[index].app_id.clone();
+
+        let report = app_doctor(&self.registry, &app_id)?;
+        clear_screen();
+        println!("OpenNTX Doctor - App: {app_id}");
+        println!("--------------------------------");
+        println!("App name: {}", report.app_name);
+        println!("Manifest exists: {}", report.manifest_exists);
+        println!("Manifest regular file: {}", report.manifest_is_regular_file);
+        println!("Manifest valid: {}", report.manifest_valid);
+        if let Some(err) = &report.manifest_validation_error {
+            if !report.manifest_valid {
+                println!("Validation error: {err}");
+            }
+        }
+        println!(
+            "Install plan: {}",
+            if report.install_plan_exists {
+                "exists"
+            } else {
+                "missing"
+            }
+        );
+        println!(
+            "drive_c: {} ({})",
+            if report.drive_c_exists {
+                "exists"
+            } else {
+                "missing"
+            },
+            if report.drive_c_is_real_dir {
+                "real dir"
+            } else {
+                "not real dir"
+            }
+        );
+        println!(
+            "registry: {} ({})",
+            if report.registry_exists {
+                "exists"
+            } else {
+                "missing"
+            },
+            if report.registry_is_real_dir {
+                "real dir"
+            } else {
+                "not real dir"
+            }
+        );
+        println!(
+            "Capture dir: {}",
+            if report.capture_dir_exists {
+                "exists"
+            } else {
+                "missing"
+            }
+        );
+        println!(
+            "Desktop entry: {}",
+            if report.desktop_entry_exists {
+                "present"
+            } else {
+                "missing"
+            }
+        );
+        println!("Package build possible: {}", report.package_build_possible);
+        println!("Log dir writable: {}", report.log_dir_writable);
+        if !report.unsafe_symlinks.is_empty() {
+            println!();
+            println!("Unsafe symlinks:");
+            for link in &report.unsafe_symlinks {
+                println!("  !! {link}");
+            }
+        }
+        if !report.warnings.is_empty() {
+            println!();
+            println!("Warnings:");
+            for w in &report.warnings {
+                println!("  ! {w}");
+            }
+        }
+        println!();
+        println!("Status: {}", report.status);
+
+        println!();
+        println!("[R] Repair (dry-run)");
+        println!("[B] Back");
+        match prompt("Select action")?.as_str() {
+            value if value.eq_ignore_ascii_case("r") => {
+                let plan = repair_app(&self.registry, &app_id, true)?;
+                clear_screen();
+                println!("OpenNTX Doctor Repair (Dry-Run)");
+                println!("-------------------------------");
+                if !plan.unsafe_symlinks_found.is_empty() {
+                    println!("UNSAFE SYMLINKS FOUND - REPAIR REFUSED:");
+                    for link in &plan.unsafe_symlinks_found {
+                        println!("  !! {link}");
+                    }
+                } else if plan.actions.is_empty() {
+                    println!("No repairs needed. App is healthy.");
+                } else {
+                    for action in &plan.actions {
+                        println!("  [planned] {} -> {}", action.description, action.path);
+                    }
+                }
+                pause("Dry-run complete.")?;
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    fn logs_screen(&self) -> Result<()> {
+        loop {
+            let logs = list_logs(&self.registry)?;
+            clear_screen();
+            println!("OpenNTX Logs");
+            println!("------------");
+            println!("Total logs: {}", logs.len());
+            if logs.is_empty() {
+                println!("No run-plan logs found.");
+                println!();
+                println!("[B] Back");
+                match prompt("Select action")?.as_str() {
+                    value if value.eq_ignore_ascii_case("b") => return Ok(()),
+                    "" => {}
+                    _ => pause("Unknown action.")?,
+                }
+                continue;
+            }
+            println!();
+            for (i, log) in logs.iter().take(20).enumerate() {
+                println!(
+                    "[{}] {} | {} | {} | {}",
+                    i + 1,
+                    log.timestamp,
+                    log.app_id,
+                    log.app_name,
+                    log.status
+                );
+            }
+            println!();
+            println!("[1-20] Show log details");
+            println!("[B] Back");
+            let input = prompt("Select action")?;
+            if input.eq_ignore_ascii_case("b") {
+                return Ok(());
+            }
+            if let Some(index) = parse_menu_index(&input, logs.len().min(20)) {
+                match show_log(&self.registry, &logs[index].file_path) {
+                    Ok(report) => {
+                        clear_screen();
+                        println!("Run-Plan Log Details");
+                        println!("--------------------");
+                        println!("App ID: {}", report.app_id);
+                        println!("Name: {}", report.name);
+                        println!("Target: {}", report.target);
+                        println!("Timestamp: {}", report.timestamp);
+                        println!("Executable: {}", report.executable_path);
+                        println!("Architecture: {}", report.architecture);
+                        println!("Status: {}", report.status);
+                        println!("Backend: {}", report.backend);
+                        if let Some(log_path) = &report.log_path {
+                            println!("Log path: {log_path}");
+                        }
+                        println!();
+                        println!("{}", report.message);
+                        pause("Press Enter.")?;
+                    }
+                    Err(e) => pause(&format!("Error: {e}"))?,
+                }
+            }
+        }
+    }
+
+    fn packaging_screen(&self) -> Result<()> {
+        let apps = self.registry.list_apps()?;
+        if apps.is_empty() {
+            clear_screen();
+            println!("No registered apps.");
+            pause("Press Enter to return.")?;
+            return Ok(());
+        }
+        loop {
+            clear_screen();
+            println!("OpenNTX Package Builder");
+            println!("-----------------------");
+            print_numbered_apps(&apps);
+            println!();
+            println!("[B] Back");
+            let input = prompt("Select app number or [B] Back")?;
+            if input.eq_ignore_ascii_case("b") {
+                return Ok(());
+            }
+            let Some(index) = parse_menu_index(&input, apps.len()) else {
+                pause("Invalid selection.")?;
+                continue;
+            };
+            let app_id = apps[index].app_id.clone();
+
+            // Show dry-run plan first
+            let mut options = DebBuildOptions::new(&app_id);
+            options.dry_run = true;
+
+            let plan = match build_deb_package(&self.registry, &options) {
+                Ok(p) => p,
+                Err(e) => {
+                    pause(&format!("Package plan failed: {e}"))?;
+                    continue;
+                }
+            };
+
+            clear_screen();
+            println!("OpenNTX Package Plan");
+            println!("--------------------");
+            println!("App ID: {app_id}");
+            println!("Package: {}", plan.package_name);
+            println!("Version: {}", plan.version);
+            println!("Deb file: {}", plan.deb_filename);
+            println!();
+            println!("Files:");
+            for f in &plan.files_to_package {
+                println!("  {f}");
+            }
+            println!();
+            println!("[B] Build .deb (with confirmation)");
+            println!("[R] Return");
+            match prompt("Select action")?.as_str() {
+                value if value.eq_ignore_ascii_case("b") => {
+                    if confirm("Build this .deb package?")? {
+                        let mut build_options = DebBuildOptions::new(&app_id);
+                        build_options.dry_run = false;
+                        match build_deb_package(&self.registry, &build_options) {
+                            Ok(built) => {
+                                pause(&format!(
+                                    "Package built: {}",
+                                    built.output_dir.join(&built.deb_filename).display()
+                                ))?;
+                            }
+                            Err(e) => pause(&format!("Build failed: {e}"))?,
+                        }
+                    } else {
+                        pause("Not built.")?;
+                    }
+                }
+                _ => {}
+            }
+        }
     }
 }
 
@@ -803,7 +1163,9 @@ fn print_app_details(
     println!("[4] Capture: Report");
     println!("[5] Capture: Status");
     println!("[P] Package (.deb)");
-    println!("[D] Dry-run remove app");
+    println!("[L] Show logs");
+    println!("[DD] Doctor");
+    println!("[DR] Dry-run remove app");
     println!("[Delete] Remove app with confirmation");
     println!("[B] Back");
 }

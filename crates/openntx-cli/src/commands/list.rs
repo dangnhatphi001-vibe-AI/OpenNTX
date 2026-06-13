@@ -2,8 +2,15 @@ use crate::output;
 use openntx_core::registry::AppRegistry;
 use openntx_core::Result;
 
-pub fn run() -> Result<()> {
+pub fn run(json: bool) -> Result<()> {
     let registry = AppRegistry::from_env()?;
+
+    if json {
+        let apps = registry.list_apps_json()?;
+        println!("{}", serde_json::to_string_pretty(&apps)?);
+        return Ok(());
+    }
+
     let apps = registry.list_apps()?;
 
     output::title("OpenNTX Registered Apps");

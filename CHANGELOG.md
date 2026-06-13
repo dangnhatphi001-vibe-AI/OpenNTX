@@ -4,6 +4,112 @@ All notable changes to OpenNTX will be documented in this file.
 
 ## Unreleased
 
+## 1.0.0-alpha — V1.0-alpha Feature Pack
+
+### Highlights
+
+- **App management commands** — rename, duplicate, export/import bundles.
+- **Doctor / integrity checks** — global and per-app diagnostics with safe repair.
+- **Logs management** — list, show, and clean run-plan logs.
+- **Config system** — persistent configuration via `openntx config`.
+- **Shell completions** — bash, zsh, fish via `openntx completions`.
+- **AppPortal V1.0-alpha** — new Library, Capture, Package Builder, Logs, Doctor, Settings screens.
+- **JSON output** — `openntx list --json`, `openntx show --json`, `openntx doctor --json`.
+- **33 new tests** covering all new features and security boundaries.
+
+### App Registry Management
+
+- Add `openntx rename <app-id> <new-name>` with dry-run by default.
+- Add `openntx duplicate <app-id> --as <new-app-id>` with symlink safety checks.
+- Add `openntx export <app-id> --output <path>` for `.openntx-bundle.tar.gz` bundles.
+- Add `openntx import <bundle-path>` with path traversal and symlink rejection.
+- Add `openntx list --json` for machine-readable app listing.
+- Add `openntx show <app-id> --json` for machine-readable app summary.
+
+### Doctor / Integrity Checks
+
+- Add `openntx doctor` for global diagnosis (data dir, app count, broken apps, logs, desktop, dpkg-deb, notify-send).
+- Add `openntx doctor <app-id>` for per-app diagnosis (manifest, install plan, drive_c, registry, capture, desktop, symlinks).
+- Add `openntx doctor --json` and `openntx doctor <app-id> --json`.
+- Add `openntx doctor <app-id> --repair --yes` for safe repairs (create missing dirs, regenerate desktop).
+- Reject unsafe symlinks during repair with clear error messages.
+
+### Logs Management
+
+- Add `openntx logs list` and `openntx logs list --json`.
+- Add `openntx logs show <path-or-app-id>` and `openntx logs show --json`.
+- Add `openntx logs clean --older-than-days <N> --yes` with dry-run by default.
+
+### Capture UX Polish
+
+- Add `openntx capture clean <app-id>` with dry-run by default.
+- Add `openntx capture diff <app-id> --summary` for compact output.
+- Add `openntx capture report <app-id> --json`.
+- Add clearer error messages for missing snapshots, unsafe symlinks, invalid app IDs.
+
+### Packaging UX
+
+- Add `openntx package inspect <deb-file>` using `dpkg-deb -I` and `dpkg-deb -c`.
+- Add `openntx package clean` with dry-run by default.
+- Add `openntx package build <app-id> --keep-staging` for post-build inspection.
+- Default version changed to `1.0.0-alpha`.
+
+### Config System
+
+- Add `~/.config/openntx/config.json` persistent configuration.
+- Add `openntx config show` to display current configuration.
+- Add `openntx config init` to create config file with defaults.
+- Add `openntx config set <key> <value>` with key validation.
+- Add `openntx config reset --yes` to restore defaults.
+- Config keys: `default_output_dir`, `default_sandbox_profile`, `enable_notifications`, `log_retention_days`, `package_version_default`, `appportal_show_advanced`.
+
+### Shell Completions
+
+- Add `openntx completions bash`.
+- Add `openntx completions zsh`.
+- Add `openntx completions fish`.
+
+### AppPortal
+
+- Redesign home screen with 8-item menu: Library, Analyze EXE, Write Install Plan, Capture Tools, Package Builder, Logs, Doctor, Settings.
+- Add Doctor screen with global and per-app diagnosis.
+- Add Logs screen with log listing and details.
+- Add Packaging screen with dry-run plan and build confirmation.
+- Add Doctor and Logs actions in app details.
+- Remove standalone Desktop Launcher menu (accessible from app details).
+
+### Documentation
+
+- Add docs/doctor.md, docs/logs.md, docs/import-export.md, docs/config.md.
+- Update README.md with V1.0-alpha capabilities and CLI examples.
+- Update CHANGELOG.md, ROADMAP.md, RELEASE_NOTES.md.
+- Update docs/demo.md, docs/appportal.md, docs/packaging.md.
+- All docs maintain honest claims: runtime execution is still not implemented.
+
+### Tests
+
+- Add 33 new tests in v1_alpha_tests.rs covering:
+  - list --json, show --json
+  - doctor global/app, doctor repair safe dirs, doctor rejects unsafe symlinks
+  - logs list/show/clean dry-run
+  - capture clean dry-run
+  - config init/show/set/reset
+  - export/import bundle path traversal rejection
+  - duplicate app safety
+  - rename dry-run/write behavior
+
+### Core
+
+- Add `doctor` module for global and per-app diagnostics.
+- Add `logs` module for run-plan log management.
+- Expand `config` module with persistent file configuration.
+- Add `tar` and `flate2` dependencies for bundle export/import.
+- New error variants: `UnsafePath`, `Config`, `AppNotFound`, `AlreadyExists`, `ToolNotAvailable`, `Diagnostic`.
+
+### Version
+
+- Bump workspace version to `1.0.0-alpha`.
+
 ## 0.9.0 — Debian Package Builder Prototype
 
 ### Highlights

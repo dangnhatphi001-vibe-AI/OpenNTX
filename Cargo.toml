@@ -7,7 +7,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.9.0"
+version = "1.0.0-alpha"
 edition = "2021"
 rust-version = "1.75"
 authors = ["OpenNTX contributors"]
@@ -19,3 +19,5 @@ serde = { version = "1.0.216", features = ["derive"] }
 serde_json = "1.0.133"
 sha2 = "0.10.8"
 thiserror = "2.0.9"
+tar = "0.4"
+flate2 = "1.0"

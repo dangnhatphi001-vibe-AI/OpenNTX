@@ -13,7 +13,7 @@
 <p align="center">
   <a href="https://github.com/openntx/openntx/actions/workflows/ci.yml"><img src="https://github.com/openntx/openntx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/status-experimental-orange" alt="Status">
-  <img src="https://img.shields.io/badge/version-0.9.0--alpha-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.0.0--alpha-blue" alt="Version">
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="License">
   <img src="https://img.shields.io/badge/runtime-not%20implemented-lightgrey" alt="Runtime">
 </p>
@@ -28,7 +28,7 @@ It aims to make Windows PE/EXE applications feel like native Linux desktop apps 
 
 ## Current Capabilities
 
-OpenNTX V0.9 can do the following today:
+OpenNTX V1.0-alpha can do the following today:
 
 - **PE/EXE Analyzer** — reads DOS headers, PE signatures, COFF headers, sections, entry points, imported DLLs, and architecture.
 - **Manifest Generator** — converts PE metadata into structured OpenNTX app manifests.
@@ -37,7 +37,12 @@ OpenNTX V0.9 can do the following today:
 - **Run-Plan Diagnostics** — loads manifests, prints app metadata, writes JSON logs, and can notify the desktop.
 - **Capture Snapshot/Diff** — snapshots app directory state, computes filesystem diffs, and generates capture reports.
 - **Debian .deb Package Builder** — builds root-owned `.deb` packages with correct file permissions from registered apps.
-- **AppPortal TUI** — terminal UI for browsing registered apps, analyzing EXEs, managing launchers, capture, and packaging.
+- **App Management** — rename, duplicate, export/import bundles, list/show with JSON output.
+- **Doctor / Integrity Checks** — global and per-app health diagnostics with safe repair.
+- **Logs Management** — list, show, and clean run-plan logs.
+- **Config System** — persistent configuration with `openntx config` commands.
+- **Shell Completions** — bash, zsh, fish completions via `openntx completions`.
+- **AppPortal V1.0-alpha TUI** — terminal UI with Library, Analyze, Install Plan, Capture, Package Builder, Logs, Doctor, and Settings.
 
 ---
 
@@ -148,10 +153,70 @@ openntx run <app-id> --notify
 openntx capture snapshot-before <app-id>
 openntx capture snapshot-after <app-id>
 openntx capture diff <app-id>
+openntx capture diff <app-id> --summary
 openntx capture report <app-id>
-openntx capture status <app-id>
-openntx capture snapshot-before <app-id> --json
-openntx capture diff <app-id> --json
+openntx capture status <app-id> --json
+openntx capture clean <app-id>
+openntx capture clean <app-id> --yes
+```
+
+### App Management
+
+```bash
+openntx list --json
+openntx show <app-id> --json
+openntx rename <app-id> "New Name" --yes
+openntx duplicate <app-id> --as <new-app-id> --yes
+openntx export <app-id> --output backup.openntx-bundle.tar.gz --yes
+openntx import backup.openntx-bundle.tar.gz --yes
+openntx import backup.openntx-bundle.tar.gz --as <new-app-id> --yes
+```
+
+### Doctor / Diagnostics
+
+```bash
+openntx doctor
+openntx doctor --json
+openntx doctor <app-id>
+openntx doctor <app-id> --json
+openntx doctor <app-id> --repair --yes
+```
+
+### Logs
+
+```bash
+openntx logs list
+openntx logs list --json
+openntx logs show <app-id>
+openntx logs show <path-to-log.json>
+openntx logs clean --older-than-days 30 --yes
+```
+
+### Package Builder
+
+```bash
+openntx package build <app-id> --yes
+openntx package build <app-id> --output dist --version 1.0.0-alpha --yes
+openntx package build <app-id> --keep-staging --yes
+openntx package inspect dist/<package>.deb
+openntx package clean --yes
+```
+
+### Configuration
+
+```bash
+openntx config show
+openntx config init
+openntx config set log_retention_days 60
+openntx config reset --yes
+```
+
+### Shell Completions
+
+```bash
+openntx completions bash >> ~/.bashrc
+openntx completions zsh >> ~/.zshrc
+openntx completions fish > ~/.config/fish/completions/openntx.fish
 ```
 
 ### Build a .deb Package

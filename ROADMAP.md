@@ -2,7 +2,20 @@
 
 OpenNTX is ambitious but must remain honest about what is implemented.
 
-## V1.0-alpha — Polish and Presentation
+## V1.0-alpha — Feature Pack (Completed)
+
+- [x] App management: rename, duplicate, export/import bundles
+- [x] Doctor / integrity checks: global and per-app diagnostics with safe repair
+- [x] Logs management: list, show, clean
+- [x] Config system: persistent configuration file
+- [x] Shell completions: bash, zsh, fish
+- [x] AppPortal V1.0-alpha: redesigned with Library, Capture, Package Builder, Logs, Doctor, Settings
+- [x] JSON output for list, show, doctor
+- [x] 33 new tests covering security boundaries
+- [x] Documentation: doctor, logs, import-export, config
+- [x] No new runtime execution — analysis-only remains
+
+## V1.0 — Polish and Presentation
 
 Planned milestone for GitHub release polish. No new runtime execution.
 

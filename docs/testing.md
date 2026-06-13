@@ -1,6 +1,6 @@
-# Testing OpenNTX V0.9
+# Testing OpenNTX V1.0-alpha
 
-OpenNTX V0.9 is a foundation release with real PE metadata analysis, manifest generation, local app registry plan writing, desktop launcher writing, run-plan diagnostics, installer capture snapshot/diff infrastructure, .deb package builder prototype, and a registry-backed AppPortal TUI. Tests verify static analysis, schemas, CLI planning, core data models, PE headers, section tables, subsystem detection, entry point, image base, imported DLL names, generated manifest validation, registry directory creation, list/show, remove dry-run/delete behavior, desktop launcher create/remove behavior, run-plan log writing, registry summary fields used by AppPortal, AppPortal confirmation parsing, capture snapshot creation, file created/modified/removed detection, directory created/removed detection, registry file change tracking, missing snapshot errors, capture report JSON validity, symlink/path traversal safety, package layout dry-run, package staging creation, package control file generation, package desktop file generation, package symlink rejection, and missing app handling. They do not verify Windows application execution because runtime execution is not implemented.
+OpenNTX V1.0-alpha adds app management, diagnostics, logs, config, shell completions, and AppPortal upgrades on top of the V0.9 foundation. Tests verify static analysis, schemas, CLI planning, core data models, PE headers, section tables, subsystem detection, entry point, image base, imported DLL names, generated manifest validation, registry directory creation, list/show with JSON output, remove dry-run/delete behavior, desktop launcher create/remove behavior, run-plan log writing, registry summary fields used by AppPortal, AppPortal confirmation parsing, capture snapshot creation, file created/modified/removed detection, directory created/removed detection, registry file change tracking, missing snapshot errors, capture report JSON validity, symlink/path traversal safety, package layout dry-run, package staging creation, package control file generation, package desktop file generation, package symlink rejection, missing app handling, doctor global/app diagnostics, doctor repair with safe directories, doctor rejection of unsafe symlinks, logs list/show/clean dry-run, config init/show/set/reset, export/import bundle path traversal rejection, duplicate app safety, rename dry-run/write behavior, and capture clean dry-run. They do not verify Windows application execution because runtime execution is not implemented.
 
 ## Prerequisites
 
@@ -182,3 +182,90 @@ Automated tests cover this in `manifest_generator_tests.rs`:
 - DirectX or graphics translation.
 - Kernel drivers.
 - Protected software or anti-cheat scenarios.
+
+## V1.0-alpha Smoke Tests
+
+### App Management
+
+```bash
+openntx rename <app-id> "New Name"
+openntx rename <app-id> "New Name" --yes
+openntx duplicate <app-id> --as <new-app-id>
+openntx duplicate <app-id> --as <new-app-id> --yes
+openntx export <app-id> --output backup.tar.gz
+openntx export <app-id> --output backup.tar.gz --yes
+openntx import backup.tar.gz
+openntx import backup.tar.gz --yes
+openntx list --json
+openntx show <app-id> --json
+```
+
+### Doctor
+
+```bash
+openntx doctor
+openntx doctor --json
+openntx doctor <app-id>
+openntx doctor <app-id> --json
+openntx doctor <app-id> --repair
+openntx doctor <app-id> --repair --yes
+```
+
+### Logs
+
+```bash
+openntx logs list
+openntx logs list --json
+openntx logs show <app-id>
+openntx logs show <app-id> --json
+openntx logs clean --older-than-days 30
+openntx logs clean --older-than-days 30 --yes
+```
+
+### Capture
+
+```bash
+openntx capture status <app-id> --json
+openntx capture clean <app-id>
+openntx capture clean <app-id> --yes
+openntx capture diff <app-id> --summary
+openntx capture report <app-id> --json
+```
+
+### Packaging
+
+```bash
+openntx package build <app-id> --output dist --version 1.0.0-alpha --yes
+openntx package inspect dist/*.deb
+openntx package clean
+openntx package clean --yes
+```
+
+### Config
+
+```bash
+openntx config show
+openntx config init
+openntx config set log_retention_days 60
+openntx config reset --yes
+```
+
+### Completions
+
+```bash
+openntx completions bash
+openntx completions zsh
+openntx completions fish
+```
+
+## What V1.0-alpha Tests Do Not Cover
+
+- Windows process execution.
+- Installer execution.
+- Real filesystem capture (beyond snapshot/diff of OpenNTX app directories).
+- Registry emulation.
+- Win32 or NT API compatibility.
+- DirectX or graphics translation.
+- Kernel drivers.
+- Protected software or anti-cheat scenarios.
+- Actual .deb installation (package builder creates .deb, does not install it).

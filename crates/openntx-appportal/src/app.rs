@@ -15,6 +15,7 @@ use openntx_core::logs::list_logs;
 use openntx_core::manifest::{generate_manifest_from_pe, AppManifest, ManifestGenerationInput};
 use openntx_core::packaging::{build_deb_package, DebBuildOptions};
 use openntx_core::pe::analyze_pe;
+use openntx_core::profile::{CompatProfile, ProfileManager};
 use openntx_core::registry::{AppRegistry, DesktopMode, RegisteredApp, RemoveMode};
 use openntx_core::runtime::{create_registered_run_plan, RunPlanOptions, RunPlanReport};
 use openntx_core::{OpenNtxError, Result};
@@ -113,6 +114,10 @@ pub struct AppState {
 
     // ── doctor sub-mode: 0 = global, 1 = per-app ──
     pub doctor_sub_index: usize,
+
+    // ── compatibility profiles (loaded from disk at startup) ──
+    pub profiles: Vec<CompatProfile>,
+    pub selected_profile_index: usize,
 }
 
 impl AppState {
@@ -141,6 +146,8 @@ impl AppState {
             should_quit: false,
             capture_action_index: 0,
             doctor_sub_index: 0,
+            profiles: Vec::new(),
+            selected_profile_index: 0,
         }
     }
 
@@ -325,6 +332,43 @@ impl AppState {
                     self.manifest = Some(m);
                 }
                 Err(e) => self.set_error(e.to_string()),
+            }
+        }
+    }
+
+    /// Load all compatibility profiles from disk into `self.profiles`.
+    ///
+    /// Initialises a `ProfileManager`, lists every stored `app_id`, and
+    /// loads each profile.  Individual load failures are logged as warnings
+    /// but **do not** abort the entire load — the TUI stays usable even if
+    /// some profile files are corrupt or missing.
+    pub fn load_profiles(&mut self) {
+        let manager = match ProfileManager::new() {
+            Ok(m) => m,
+            Err(e) => {
+                self.set_error(format!("profile manager init failed: {e}"));
+                return;
+            }
+        };
+
+        let ids = match manager.list_profiles() {
+            Ok(ids) => ids,
+            Err(e) => {
+                self.set_error(format!("failed to list profiles: {e}"));
+                return;
+            }
+        };
+
+        self.profiles.clear();
+        self.selected_profile_index = 0;
+
+        for id in &ids {
+            match manager.load_profile(id) {
+                Ok(profile) => self.profiles.push(profile),
+                Err(e) => {
+                    // Non-fatal: log and continue loading the rest.
+                    eprintln!("[openntx] skipping profile '{id}': {e}");
+                }
             }
         }
     }

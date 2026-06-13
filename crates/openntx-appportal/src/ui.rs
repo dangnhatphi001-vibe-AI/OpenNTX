@@ -139,7 +139,10 @@ pub fn draw(f: &mut Frame, app: &AppState) {
 
     // Main Content (Dynamic panel)
     match app.mode {
-        AppMode::Library | AppMode::Capture | AppMode::Package => {
+        AppMode::Library => {
+            draw_library(f, body_split[1], app);
+        }
+        AppMode::Capture | AppMode::Package => {
             draw_library_table(f, body_split[1], app);
         }
         AppMode::Analyze => {
@@ -205,6 +208,44 @@ pub fn draw(f: &mut Frame, app: &AppState) {
 }
 
 // ── Render Helpers ───────────────────────────────────────────────────────────
+
+pub fn draw_library(f: &mut Frame, area: ratatui::layout::Rect, app: &AppState) {
+    let header_cells = ["App Name", "App ID", "Version", "Architecture"]
+        .iter()
+        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)));
+    let header = Row::new(header_cells).height(1).bottom_margin(1);
+
+    let rows: Vec<Row> = app.profiles.iter().enumerate().map(|(i, p)| {
+        let arch_color = match p.metadata.arch {
+            openntx_core::profile::Arch::X86_64 => Color::Green,
+            _ => Color::Yellow, // X86 hoặc Unknown
+        };
+        
+        let row = Row::new(vec![
+            Cell::from(p.metadata.name.clone()),
+            Cell::from(p.app_id.clone()).style(Style::default().fg(Color::Cyan)),
+            Cell::from(p.metadata.version.clone()),
+            Cell::from(format!("{:?}", p.metadata.arch)).style(Style::default().fg(arch_color)),
+        ]);
+
+        if i == app.selected_profile_index {
+            row.style(Style::default().bg(Color::Blue).add_modifier(Modifier::BOLD))
+        } else {
+            row
+        }
+    }).collect();
+
+    let table = Table::new(rows, [
+        Constraint::Percentage(30),
+        Constraint::Percentage(30),
+        Constraint::Percentage(20),
+        Constraint::Percentage(20),
+    ])
+    .header(header)
+    .block(Block::default().borders(Borders::ALL).title(" Local Profile Database "));
+
+    f.render_widget(table, area);
+}
 
 fn draw_library_table(f: &mut Frame, area: Rect, app: &AppState) {
     let block = Block::default()
@@ -327,7 +368,6 @@ fn draw_home_dashboard(f: &mut Frame, area: Rect, _app: &AppState) {
         Line::from("  • Press [4] or select 'Capture' to snapshot changes before/after installs."),
         Line::from("  • Press [5] or select 'Builder' to bundle registry/sandboxes to .deb packages."),
         Line::from("  • Press [6] or select 'Logs' to inspect standard output or auditing traces."),
-        Line::from("  • Press [7] or choose 'Doctor' to diagnose general environment health."),
     ];
 
     let p = Paragraph::new(info_text).wrap(Wrap { trim: false });

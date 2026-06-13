@@ -86,6 +86,7 @@ async fn main() -> Result<()> {
     let registry = AppRegistry::from_env().context("failed to initialise app registry")?;
     let mut app = AppState::new();
     app.refresh_apps(&registry);
+    app.load_profiles();
 
     // ── 4. Event system (dedicated OS thread, NOT tokio::spawn) ───────────────
     let events = EventHandler::new();

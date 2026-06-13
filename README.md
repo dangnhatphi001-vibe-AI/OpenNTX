@@ -8,349 +8,183 @@
 
 # OpenNTX
 
-**Drop EXE. Run Native.**
+**Windows Application Subsystem for Linux**
 
 <p align="center">
   <a href="https://github.com/openntx/openntx/actions/workflows/ci.yml"><img src="https://github.com/openntx/openntx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/status-experimental-orange" alt="Status">
-  <img src="https://img.shields.io/badge/version-1.0.0--alpha-blue" alt="Version">
+  <img src="https://img.shields.io/badge/status-v1.2.0--alpha-orange" alt="Status">
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="License">
   <img src="https://img.shields.io/badge/runtime-not%20implemented-lightgrey" alt="Runtime">
 </p>
 
-OpenNTX is an experimental Windows application subsystem for Linux.
+OpenNTX is an experimental **Windows Application Subsystem for Linux**.
+It makes Windows PE/EXE applications feel like native Linux desktop apps by
+combining PE detection, app manifests, compatibility profiles, installer
+capture, sandboxing, and desktop integration — all driven by a structured
+manifest and profile database.
 
-It aims to make Windows PE/EXE applications feel like native Linux desktop apps by combining PE detection, app manifests, installer capture, sandboxing, desktop integration, and a future NT/Win32 compatibility runtime.
-
-> **Important:** OpenNTX does **not** execute Windows binaries or installers yet. Current capabilities are analysis-only and prototype packaging.
-
----
-
-## Current Capabilities
-
-OpenNTX V1.0-alpha can do the following today:
-
-- **PE/EXE Analyzer** — reads DOS headers, PE signatures, COFF headers, sections, entry points, imported DLLs, and architecture.
-- **Manifest Generator** — converts PE metadata into structured OpenNTX app manifests.
-- **Local App Registry** — writes per-app directories with manifest, install plan, metadata, and state.
-- **Desktop Launcher Writer** — generates `.desktop` files for registered apps.
-- **Run-Plan Diagnostics** — loads manifests, prints app metadata, writes JSON logs, and can notify the desktop.
-- **Capture Snapshot/Diff** — snapshots app directory state, computes filesystem diffs, and generates capture reports.
-- **Debian .deb Package Builder** — builds root-owned `.deb` packages with correct file permissions from registered apps.
-- **App Management** — rename, duplicate, export/import bundles, list/show with JSON output.
-- **Doctor / Integrity Checks** — global and per-app health diagnostics with safe repair.
-- **Logs Management** — list, show, and clean run-plan logs.
-- **Config System** — persistent configuration with `openntx config` commands.
-- **Shell Completions** — bash, zsh, fish completions via `openntx completions`.
-- **AppPortal V1.0-alpha TUI** — terminal UI with Library, Analyze, Install Plan, Capture, Package Builder, Logs, Doctor, and Settings.
+> **Current status:** V1.2.0-alpha — analysis, profiling, and packaging are
+> implemented. Runtime execution is **not** implemented yet.
 
 ---
 
-## Not Implemented Yet
+## Core Vision & Philosophy
 
-OpenNTX does **not** currently provide:
+OpenNTX is **not** a Wine frontend. It is **not** Proton. It is **not** a
+prefix manager.
 
-- Windows binary execution
-- Installer execution
-- Win32/NT runtime
-- DirectX translation
-- Driver support
-- Wine, Proton, Bottles, or Lutris integration
-- Full sandbox enforcement
+OpenNTX is a **subsystem** — a structured layer that sits between a Windows
+application and the Linux host, translating application identity, filesystem
+layout, registry expectations, and runtime requirements into native Linux
+desktop semantics.
 
-These are future research areas. See [ROADMAP.md](ROADMAP.md) for the full plan.
-
----
-
-## Quick Demo
-
-This is the V1.0-alpha analysis, management, and packaging flow. No Windows binary is executed at any step.
-
-```bash
-# 1. Analyze a Windows PE/EXE file
-openntx analyze ~/Downloads/setup.exe
-
-# 2. Generate an OpenNTX manifest from PE metadata
-openntx manifest generate ~/Downloads/setup.exe --json
-
-# 3. Register the app locally (writes manifest, install plan, metadata)
-openntx install ~/Downloads/setup.exe --write-plan
-
-# 4. Create a Linux desktop launcher
-openntx desktop create <app-id> --yes
-
-# 5. Snapshot the app directory before a capture step
-openntx capture snapshot-before <app-id>
-
-# 6. (Optional) Manually modify files in the app directory to simulate changes
-
-# 7. Snapshot after the change
-openntx capture snapshot-after <app-id>
-
-# 8. Compute the filesystem diff
-openntx capture diff <app-id>
-
-# 9. Build a .deb package (dry-run by default, pass --yes to build)
-openntx package build <app-id> --yes
-```
-
-Replace `<app-id>` with the registered app ID shown by `openntx list`.
-
-**OpenNTX does not execute Windows binaries.** Every step above is analysis, metadata, or packaging only.
-
----
-
-## CLI Examples
-
-Use `<path-to-exe>` for a Windows PE/EXE path and `<app-id>` for a registered OpenNTX app ID.
-
-### Analyze and Generate Metadata
-
-```bash
-openntx analyze <path-to-exe>
-openntx manifest generate <path-to-exe>
-openntx manifest generate <path-to-exe> --json
-openntx manifest generate <path-to-exe> --output /tmp/app.openntx.json
-```
-
-### Write an Analysis-Only Install Plan
-
-```bash
-openntx install <path-to-exe>
-openntx install <path-to-exe> --write-plan
-openntx install <path-to-exe> --write-plan --desktop
-```
-
-### Manage Registered Apps
-
-```bash
-openntx list
-openntx show <app-id>
-openntx remove <app-id> --dry-run
-openntx remove <app-id> --yes
-```
-
-### Desktop Launchers
-
-```bash
-openntx desktop create <app-id> --dry-run
-openntx desktop create <app-id> --yes
-openntx desktop remove <app-id> --dry-run
-openntx desktop remove <app-id> --yes
-```
-
-### Run Plan (No Windows Execution)
-
-```bash
-openntx run <app-id>
-openntx run <app-id> --json
-openntx run <app-id> --notify
-```
-
-### Capture Snapshot/Diff
-
-```bash
-openntx capture snapshot-before <app-id>
-openntx capture snapshot-after <app-id>
-openntx capture diff <app-id>
-openntx capture diff <app-id> --summary
-openntx capture report <app-id>
-openntx capture status <app-id> --json
-openntx capture clean <app-id>
-openntx capture clean <app-id> --yes
-```
-
-### App Management
-
-```bash
-openntx list --json
-openntx show <app-id> --json
-openntx rename <app-id> "New Name" --yes
-openntx duplicate <app-id> --as <new-app-id> --yes
-openntx export <app-id> --output backup.openntx-bundle.tar.gz --yes
-openntx import backup.openntx-bundle.tar.gz --yes
-openntx import backup.openntx-bundle.tar.gz --as <new-app-id> --yes
-```
-
-### Doctor / Diagnostics
-
-```bash
-openntx doctor
-openntx doctor --json
-openntx doctor <app-id>
-openntx doctor <app-id> --json
-openntx doctor <app-id> --repair --yes
-```
-
-### Logs
-
-```bash
-openntx logs list
-openntx logs list --json
-openntx logs show <app-id>
-openntx logs show <path-to-log.json>
-openntx logs clean --older-than-days 30 --yes
-```
-
-### Package Builder
-
-```bash
-openntx package build <app-id> --yes
-openntx package build <app-id> --output dist --version 1.0.0-alpha --yes
-openntx package build <app-id> --keep-staging --yes
-openntx package inspect dist/<package>.deb
-openntx package clean --yes
-```
-
-### Configuration
-
-```bash
-openntx config show
-openntx config init
-openntx config set log_retention_days 60
-openntx config reset --yes
-```
-
-### Shell Completions
-
-```bash
-openntx completions bash >> ~/.bashrc
-openntx completions zsh >> ~/.zshrc
-openntx completions fish > ~/.config/fish/completions/openntx.fish
-```
-
----
-
-## AppPortal
-
-AppPortal is the user-facing terminal UI.
-
-<p align="center">
-  <img src="screenshots/appportal_mockup.png" alt="OpenNTX AppPortal Terminal Mockup" width="850">
-</p>
-
-Current AppPortal surfaces:
-
-- **Home** — version, registered app count, runtime status, action menu.
-- **Library** — lists registered apps from `~/.local/share/openntx/apps/` with per-app details.
-- **App Details** — manifest path, executable path, sandbox profile, DLL count, desktop launcher status, capture actions, doctor, logs.
-- **Analyze EXE** — reads PE metadata and previews generated manifests.
-- **Install Plan** — writes registry metadata only after confirmation.
-- **Capture Tools** — Snapshot Before/After, Diff, Report, Status, Clean per registered app.
-- **Package Builder** — dry-run plan, build `.deb` with confirmation, inspect packages.
-- **Logs** — list and view run-plan diagnostic logs.
-- **Doctor** — global and per-app health diagnosis.
-- **Settings** — default sandbox, runtime backend, diagnostics, path layout.
-
----
-
-## Architecture Overview
-
-<p align="center">
-  <img src="screenshots/architecture.png" alt="OpenNTX Architecture Overview" width="850">
-</p>
+The execution chain:
 
 ```text
-Windows PE/EXE
-    |
-    v
-PE analyzer
-    |
-    v
-OpenNTX Core
-    |
-    +--> manifest generator/resolver
-    +--> sandbox policy
-    +--> registry/filesystem overlay model
-    +--> desktop integration
-    +--> packaging layout
-    |
-    v
-Runtime backend abstraction
-    |
-    +--> NotImplementedBackend        (current)
-    +--> ExternalCompatibilityBackend (future placeholder)
-    +--> FutureNativeBackend          (future PE/NT/Win32 research)
+  Windows Application (.exe / .msi)
+           │
+           ▼
+  ┌─────────────────────────┐
+  │   OpenNTX Runtime        │  PE analysis · Manifest resolution
+  │   (identity & planning)  │  Compatibility profile lookup
+  └────────────┬────────────┘
+               │
+               ▼
+  ┌─────────────────────────┐
+  │   OpenNTX Services       │  Sandbox policy · Registry overlay
+  │   (isolation & mapping)  │  Filesystem mapping · Desktop integration
+  └────────────┬────────────┘
+               │
+               ▼
+  ┌─────────────────────────┐
+  │   Linux Host             │  Native launcher · Isolated state
+  │   (desktop & process)    │  Logs · Uninstall metadata
+  └─────────────────────────┘
 ```
 
-The CLI and AppPortal call the core. Runtime logic must not live in the GUI.
+The user drops an EXE. OpenNTX analyses it, generates a manifest, resolves a
+compatibility profile, maps the filesystem and registry, applies a sandbox
+policy, and produces a native Linux desktop launcher. The application runs in
+an isolated environment with structured logs and clear permission boundaries.
+
+No prefixes. No wrapper scripts. No manual command lines.
 
 ---
 
-## Security Model
+## Roadmap — V1.x Series
 
-- OpenNTX does not execute Windows binaries or installers.
-- PE analysis reads headers and metadata only — no code execution.
-- App registry writes are local and isolated per app.
-- Bundle export/import rejects path traversal and symlink escapes.
-- Doctor repair refuses to follow unsafe symlinks.
-- All destructive operations are dry-run by default; `--yes` required for writes.
-- Capture snapshots inspect OpenNTX app directories only.
-- The `.deb` package builder uses `symlink_metadata()` to reject unsafe entries, sets 0644/0755 permissions, and builds with `--root-owner-group`.
-- The sandbox model is documented in [docs/sandbox-model.md](docs/sandbox-model.md).
+- [x] **V1.0-alpha — Foundation**
+  PE/EXE Analyzer, Manifest Generator, App Registry, Desktop Launcher,
+  Run-Plan Diagnostics, Capture Snapshot/Diff, .deb Package Builder,
+  App Management (rename, duplicate, export/import), Doctor/Integrity
+  Checks, Logs, Config System, Shell Completions.
 
----
+- [x] **V1.1.0 — AppPortal UX & Async Demo Flow**
+  Async TUI with crossterm event system (dedicated OS thread, no tokio
+  blocking), Library/Details/Capture/Package/Doctor/Logs screens,
+  background worker tasks, graceful terminal teardown with panic hook.
 
-## Roadmap
+- [x] **V1.2.0 — Compatibility Profile Database**
+  Per-application `CompatProfile` schema (metadata, runtime requirements,
+  filesystem rules, registry rules, installer behaviour), `ProfileManager`
+  with JSON persistence at `~/.local/share/openntx/profiles/`, integration
+  into AppPortal TUI state.
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 0 | Concept and repository foundation | Done |
-| 1 | PE analyzer and manifest generator | Done (V0.2/V0.3) |
-| 2 | AppPortal registry UI | Done (V0.6) |
-| 3 | Desktop integration and launcher generation | Done (V0.5) |
-| 4 | Installer capture prototype | Partial (V0.8 snapshot/diff) |
-| 5 | Runtime backend abstraction | Placeholder only |
-| 6 | Win32/NT compatibility research | Not started |
-| 7 | Compatibility database and profiles | Not started |
-| 8 | Sandboxed app-store UX | Not started |
-| V1.0-alpha | App management, doctor, logs, config, completions, AppPortal upgrade | Done |
-
-See [ROADMAP.md](ROADMAP.md) for the full plan.
+- [ ] **V1.3.0 — Advanced Installer Capture Workflow**
+  Guided multi-step capture: pre-install snapshot, installer execution
+  sandbox, post-install snapshot, automated diff analysis, profile
+  auto-generation from capture data.
 
 ---
 
-## License and Commercial Use
+## Tech Stack
 
-OpenNTX is a source-available project.
+**Language:** Rust (edition 2021, MSRV 1.75)
 
-The default license is **noncommercial**. Commercial use requires explicit written permission from Đặng Nhất Phi.
+**Cargo Workspace:**
 
-- [LICENSE](LICENSE) — PolyForm Noncommercial 1.0.0
-- [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) — commercial licensing terms
-- [CONTRIBUTOR-LICENSE-TERMS.md](CONTRIBUTOR-LICENSE-TERMS.md) — contributor agreement
+```text
+crates/
+  openntx-core       Core engine — data models, validation, path layout,
+                     PE analysis, manifest generation, compatibility
+                     profiles, runtime planning, desktop integration,
+                     capture, packaging, doctor, logs, config, sandbox.
 
----
+  openntx-cli        Command-line interface for automation, diagnostics,
+                     and scripted workflows.  JSON output for every
+                     command.  Shell completions (bash, zsh, fish).
 
-## Contributing
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CONTRIBUTOR-LICENSE-TERMS.md](CONTRIBUTOR-LICENSE-TERMS.md) before submitting patches.
-
-Contributions must keep OpenNTX honest: do not claim compatibility that has not been implemented and tested.
-
-### Development Setup
-
-```bash
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source "$HOME/.cargo/env"
-
-# Build and test
-cargo build --workspace
-cargo test --workspace
-tools/dev-check.sh
-
-# Install the CLI
-cargo install --path crates/openntx-cli
+  openntx-appportal  Async TUI frontend built with ratatui + crossterm.
+                     Dedicated OS thread for input polling.  Background
+                     worker tasks via tokio::task::spawn_blocking.
 ```
 
-### Running Checks
+**Key dependencies:**
+
+| Crate | Purpose |
+|---|---|
+| `ratatui` | Terminal UI rendering |
+| `crossterm` | Terminal input/output (raw mode, alternate screen) |
+| `tokio` | Async runtime for background tasks |
+| `serde` / `serde_json` | JSON serialization for manifests, profiles, configs |
+| `thiserror` | Structured error types |
+| `sha2` | SHA-256 hashing for integrity checks |
+| `tar` / `flate2` | Export/import bundle compression |
+| `dirs` | XDG-compliant data directory resolution |
+| `anyhow` | Error propagation in CLI |
+
+**Data formats:**
+
+| Schema | Location |
+|---|---|
+| App Manifest | `schemas/app-manifest.schema.json` |
+| Compatibility Profile | `schemas/compatibility-profile.schema.json` |
+| Capture Report | `schemas/capture-report.schema.json` |
+| Capture Snapshot | `schemas/capture-snapshot.schema.json` |
+| Capture Diff | `schemas/capture-diff.schema.json` |
+
+---
+
+## The Golden Rule
+
+> **OpenNTX will never become a Wine manager.**
+
+Wine is a compatibility layer that translates Windows API calls in real time.
+Proton is a Wine distribution optimised for gaming. Lutris, Bottles, and
+PlayOnLinux are prefix managers that wrap Wine with configuration UIs.
+
+OpenNTX is none of these.
+
+OpenNTX builds its own **application identity layer** — manifests, profiles,
+sandbox policies, filesystem mappings, registry overlays — so that a Windows
+application can be managed, isolated, and integrated into the Linux desktop
+as a structured, auditable entity.
+
+When a runtime backend is implemented, it will be an **OpenNTX service** —
+not a wrapper around Wine. The compatibility profile database, the sandbox
+model, and the manifest-driven architecture exist specifically so that
+OpenNTX can evolve its own runtime without depending on external compatibility
+layers.
+
+---
+
+## Quick Start
 
 ```bash
-cargo fmt --all -- --check
-cargo build --workspace
-cargo test --workspace
-bash tools/dev-check.sh
+# Build the workspace
+cargo build --release
+
+# Analyse a Windows EXE
+./target/release/openntx analyze /path/to/app.exe
+
+# Register an app
+./target/release/openntx register /path/to/app.exe
+
+# Launch the TUI
+./target/release/openntx-appportal
+
+# Run doctor diagnostics
+./target/release/openntx doctor --global
 ```
 
 ---
@@ -358,17 +192,23 @@ bash tools/dev-check.sh
 ## Documentation
 
 | Document | Description |
-|----------|-------------|
-| [docs/vision.md](docs/vision.md) | Project vision and long-term goals |
-| [docs/architecture.md](docs/architecture.md) | System architecture |
-| [docs/manifest-spec.md](docs/manifest-spec.md) | Manifest schema specification |
-| [docs/sandbox-model.md](docs/sandbox-model.md) | Sandbox and permission model |
+|---|---|
+| [docs/vision.md](docs/vision.md) | Long-term vision and design philosophy |
+| [docs/architecture.md](docs/architecture.md) | System architecture and module boundaries |
+| [docs/manifest-spec.md](docs/manifest-spec.md) | App manifest specification |
+| [docs/sandbox-model.md](docs/sandbox-model.md) | Sandbox and isolation model |
 | [docs/runtime-design.md](docs/runtime-design.md) | Runtime backend design |
-| [docs/installer-capture.md](docs/installer-capture.md) | Capture snapshot/diff design |
-| [docs/packaging.md](docs/packaging.md) | Debian packaging design |
-| [docs/desktop-integration.md](docs/desktop-integration.md) | Desktop launcher design |
-| [docs/testing.md](docs/testing.md) | Testing guide |
-| [docs/demo.md](docs/demo.md) | Step-by-step demo guide |
-| [RELEASE_NOTES.md](RELEASE_NOTES.md) | Release notes for current version |
-| [ROADMAP.md](ROADMAP.md) | Full development roadmap |
-| [CHANGELOG.md](CHANGELOG.md) | Version changelog |
+| [docs/capture-snapshot.md](docs/installer-capture.md) | Installer capture workflow |
+| [docs/packaging.md](docs/packaging.md) | .deb package builder |
+| [docs/desktop-integration.md](docs/desktop-integration.md) | Desktop launcher generation |
+| [docs/testing.md](docs/testing.md) | Test strategy and coverage |
+| [ROADMAP.md](ROADMAP.md) | Detailed roadmap with milestones |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
+
+---
+
+## License
+
+OpenNTX is licensed under the
+[PolyForm Noncommercial License 1.0.0](LICENSE).
+See [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) for commercial use.

@@ -65,6 +65,12 @@ pub enum OpenNtxError {
 
     #[error("namespace unshare failed: {0}")]
     NamespaceUnshareFailed(String),
+
+    #[error("reaper process kill failed: {0}")]
+    ReaperProcessKillFailed(String),
+
+    #[error("cgroup cleanup failed: {0}")]
+    CgroupCleanupFailed(String),
 }
 
 pub type Result<T> = std::result::Result<T, OpenNtxError>;

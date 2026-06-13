@@ -4,15 +4,51 @@ All notable changes to OpenNTX will be documented in this file.
 
 ## Unreleased
 
-## 0.9.0 - Debian Package Builder Polish
+## 0.9.0 — Debian Package Builder Prototype
 
-- Bump workspace version to 0.9.0.
-- Build .deb with `dpkg-deb --root-owner-group` so package contents are root/root.
-- Set 0644 permissions on regular data files (.json, .txt, .desktop) in staging.
-- Set 0755 permissions on directories in staging.
-- Keep dry-run default for `openntx package build`.
+### Highlights
+
+- Build `.deb` packages from registered OpenNTX apps with correct file permissions and root ownership.
+- Installer capture snapshot/diff infrastructure for OpenNTX app directories.
+- AppPortal capture actions: Snapshot Before/After, Diff, Report, Status.
+
+### Packaging
+
+- Add `openntx package build <app-id>` with `--yes`, `--output`, `--version`, `--dry-run` flags.
+- Build `.deb` with `dpkg-deb --root-owner-group` for root/root ownership.
+- Set 0644 permissions on regular files and 0755 on directories in staging.
+- Stage in system temp dir for reliable permissions on all filesystems.
 - Add `set_staging_permissions` helper for recursive Unix permission fixing.
-- Update README, CHANGELOG, ROADMAP, docs for V0.9.
+- Dry-run by default; pass `--yes` to actually build.
+
+### Capture
+
+- Add `openntx capture snapshot-before <app-id>`.
+- Add `openntx capture snapshot-after <app-id>`.
+- Add `openntx capture diff <app-id>`.
+- Add `openntx capture report <app-id>`.
+- Add `openntx capture status <app-id>`.
+- All capture commands support `--json`.
+- All capture commands fail gracefully if app ID is unknown or snapshots are missing.
+
+### AppPortal
+
+- Add Capture menu option with per-app Snapshot Before/After, Diff, Report, Status actions.
+- Add Package (.deb) action in app details.
+
+### Documentation
+
+- Polish README.md for V1.0-alpha GitHub presentation.
+- Add RELEASE_NOTES.md for v0.9.0.
+- Add docs/demo.md with step-by-step demo guide.
+- Add V1.0-alpha milestone to ROADMAP.md.
+- Update CHANGELOG, docs, and schemas for V0.9.
+
+### Security
+
+- Use `symlink_metadata()` for safe file inspection in capture and packaging.
+- Reject symlinks in capture snapshots and package staging.
+- Stage in temp dir to avoid permission issues on FAT/NTFS/external mounts.
 
 ## 0.8.0 - Installer Capture Snapshot/Diff Infrastructure
 

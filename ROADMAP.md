@@ -2,6 +2,21 @@
 
 OpenNTX is ambitious but must remain honest about what is implemented.
 
+## V1.0-alpha — Polish and Presentation
+
+Planned milestone for GitHub release polish. No new runtime execution.
+
+- [x] README.md rewrite and restructuring
+- [x] RELEASE_NOTES.md for v0.9.0
+- [x] docs/demo.md with step-by-step demo guide
+- [x] GitHub Actions CI workflow
+- [x] Issue and PR templates
+- [ ] AppPortal screenshots and terminal captures
+- [ ] Visual assets (banner, icon, architecture diagram refresh)
+- [ ] Demo documentation with real CLI output examples
+- [ ] GitHub release with tags and release notes
+- [ ] No new runtime execution planned
+
 ## Current V0.9 Status
 
 - Real PE analyzer implemented.

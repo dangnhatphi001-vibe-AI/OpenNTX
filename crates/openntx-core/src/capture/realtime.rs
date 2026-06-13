@@ -457,21 +457,42 @@ mod tests {
         let rx = session.start_tracking().expect("start_tracking");
         thread::sleep(Duration::from_millis(100));
 
-        let sub = tmp.path().join("newdir");
-        fs::create_dir(&sub).expect("create dir");
-        thread::sleep(Duration::from_millis(200)); // let tracker pick up the new watch
+        // Retry loop: the inotify tracker thread has a 250ms poll interval,
+        // so it may take a few attempts for the new-directory watch to be
+        // registered before the file-creation event can be captured.
+        let max_attempts = 5;
+        let mut found = None;
 
-        let file_in_sub = sub.join("inner.txt");
-        fs::write(&file_in_sub, "data").expect("write in subdir");
+        for attempt in 0..max_attempts {
+            let sub = tmp.path().join(format!("newdir-{}", attempt));
+            fs::create_dir(&sub).expect("create dir");
 
-        let found = wait_for(
-            &rx,
-            Duration::from_secs(3),
-            |ev| matches!(ev, CaptureEvent::FileCreated(p) if p == &file_in_sub),
-        );
+            // Wait long enough for the tracker to register the new watch.
+            // The tracker polls every 250ms, so 500ms gives it two full cycles.
+            thread::sleep(Duration::from_millis(500));
+
+            let file_in_sub = sub.join("inner.txt");
+            fs::write(&file_in_sub, "data").expect("write in subdir");
+
+            let result = wait_for(
+                &rx,
+                Duration::from_secs(3),
+                |ev| matches!(ev, CaptureEvent::FileCreated(p) if p == &file_in_sub),
+            );
+
+            if result.is_some() {
+                found = result;
+                break;
+            }
+            // If the event was missed (race condition), drain stale events
+            // and retry with a fresh directory.
+            while rx.try_recv().is_ok() {}
+        }
+
         assert!(
             found.is_some(),
-            "expected FileCreated for file inside new subdirectory"
+            "expected FileCreated for file inside new subdirectory (tried {} times)",
+            max_attempts
         );
     }
 

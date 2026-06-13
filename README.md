@@ -12,19 +12,21 @@
 
 <p align="center">
   <a href="https://github.com/openntx/openntx/actions/workflows/ci.yml"><img src="https://github.com/openntx/openntx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/version-v2.2.0--alpha-brightgreen" alt="Version">
+  <img src="https://img.shields.io/badge/version-v2.5.0--alpha-brightgreen" alt="Version">
   <img src="https://img.shields.io/badge/era-Execution%20%26%20Subsystem-critical" alt="Era">
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="License">
   <img src="https://img.shields.io/badge/runtime-LIVE-brightgreen" alt="Runtime">
 </p>
 
-> **Version: v2.2.0-alpha — The Execution & Subsystem Era**
+> **Version: v2.5.0-alpha — The Execution, Hardening & Graphics Era**
 >
 > OpenNTX has crossed the Rubicon. The V1.x identity layer is complete.
 > The kernel now recognises `.exe` files natively, the runtime executes them
-> in isolated sandboxes, and the TUI monitors every capture event in
-> real time through a live IPC bridge. This is no longer a planning tool —
-> **it is a subsystem.**
+> in isolated sandboxes with cgroups v2 resource governance and namespace
+> isolation, the reaper engine culls zombie processes, the TUI monitors
+> every capture event in real time through a live IPC bridge, and the
+> graphics stub provides virtual window surfaces for Windows GDI/DirectX
+> applications. This is no longer a planning tool — **it is a subsystem.**
 
 ---
 
@@ -166,6 +168,22 @@ learns.
   `RuntimeIpcServer` listens on `/tmp/openntx_runtime.sock`.
   `RuntimeIpcClient` sends JSON-line status updates during capture.
   TUI displays real-time blinking banner: `⚠ [KERNEL] SYSTEM IS CAPTURING`.
+
+- [x] **V2.3.0 — cgroups v2 Resource Governance & Namespace Hardening**
+  `ResourceGovernor` creates per-app cgroup subtrees for memory and CPU
+  limits. `SecurityConfig` tiers (hardened/permissive/default) control
+  `CLONE_NEWNET` and `CLONE_NEWNS` namespace isolation via `pre_exec`.
+
+- [x] **V2.4.0 — Process Reaper Engine**
+  `ReaperEngine` reads PIDs from `cgroup.procs`, sends SIGTERM, waits
+  500ms grace period, then SIGKILLs survivors. `cleanup_cgroup_node`
+  removes the cgroup directory after all processes are dead.
+
+- [x] **V2.5.0 — Graphics Stub & Virtual Window Mapping**
+  `WindowStubManager` allocates virtual HWNDs for sandboxed Windows
+  applications. Headless mode: memory-mapped RGBA framebuffer files.
+  X11 mode: display connection intent recorded. `map_gdi_flush` receives
+  raw pixel data from the Windows emulation layer.
 
 ---
 
@@ -322,6 +340,9 @@ crates/
     executor.rs      OpenNTXExecutor — PE validation, sandbox, Wine launch
     entrypoint.rs    RuntimeEntrypoint — kernel args, dispatch, auto-fallback
     ipc.rs           RuntimeIpcServer/Client — UDS live status bridge
+    cgroups.rs       ResourceGovernor — cgroups v2 memory/CPU limits
+    reaper.rs        ReaperEngine — SIGTERM/SIGKILL process reaping
+    graphics.rs      WindowStubManager — virtual HWND & framebuffer
     backend.rs       RuntimeBackend trait and execution plans
     placeholder.rs   NotImplemented/External/Future backend stubs
     run_plan.rs      Run-plan generation and logging
@@ -357,7 +378,7 @@ crates/
 
 ## Test Coverage
 
-**213 tests, 0 failures.** Full breakdown:
+**286 tests, 0 failures.** Full breakdown:
 
 | Module | Tests | Coverage |
 |---|---|---|
@@ -365,6 +386,9 @@ crates/
 | `runtime::executor` | 12 | PE detection, SHA-256, sandbox creation, Wine env, args passthrough |
 | `runtime::entrypoint` | 17 | Kernel args parsing, dispatch flow, fallback capture, profile build |
 | `runtime::ipc` | 9 | Message round-trip, server-client E2E, cleanup, error handling |
+| `runtime::cgroups` | 17 | Path generation, sanitization, cpu_max_from_percent, apply_limits, cleanup |
+| `runtime::reaper` | 19 | PID parsing, SIGTERM/SIGKILL flow, cgroup cleanup, signal helpers |
+| `runtime::graphics` | 22 | Surface creation, HWND allocation, GDI flush, framebuffer I/O, destruction |
 | `profile` | 12 | CRUD, round-trip, arch serde, optional fields |
 | `capture::realtime` | 7 | inotify events, nested dirs, ordering, shutdown |
 | `capture::snapshot/diff` | 14 | Snapshots, diffs, symlinks, registry tracking |

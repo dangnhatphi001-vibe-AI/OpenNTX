@@ -12,13 +12,13 @@
 
 <p align="center">
   <a href="https://github.com/openntx/openntx/actions/workflows/ci.yml"><img src="https://github.com/openntx/openntx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/version-v2.6.5--alpha-brightgreen" alt="Version">
+  <img src="https://img.shields.io/badge/version-v2.7.0--alpha-brightgreen" alt="Version">
   <img src="https://img.shields.io/badge/era-Execution%20%26%20Subsystem-critical" alt="Era">
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="License">
   <img src="https://img.shields.io/badge/runtime-LIVE-brightgreen" alt="Runtime">
 </p>
 
-> **Version: v2.6.5-alpha — The Execution, Hardening, Graphics, Registry & API Era**
+> **Version: v2.7.0-alpha — The Execution, Hardening, Graphics, Registry, API & GUI Era**
 >
 > OpenNTX has crossed the Rubicon. The V1.x identity layer is complete.
 > The kernel now recognises `.exe` files natively, the runtime executes them
@@ -29,6 +29,9 @@
 > applications, and the isolated registry engine emulates Windows Registry
 > hives via per-app TOML files. The RESTful API Bridge (`axum`) exposes
 > `/api/v1/execute` and `/api/v1/purge` endpoints for GUI integration.
+> The Slint-based graphical frontend (`openntx-gui`) provides a Cyberpunk
+> Dark Mode interface with real-time system monitoring, app deployment,
+> and live log terminal.
 > This is no longer a planning tool — **it is a subsystem.**
 
 ---
@@ -199,6 +202,12 @@ learns.
   `POST /api/v1/purge` endpoints. Bridges GUI AppPortal to the runtime
   kernel. Supports hardened/permissive security modes.
 
+- [x] **V2.7.0 — Slint GUI Frontend & API Client Bridge**
+  `openntx-gui` crate with Slint UI (Cyberpunk/Industrial Dark Mode).
+  System monitor header (PIDs, RAM, CPU), app grid view, deploy button,
+  real-time log terminal. Async API client via `reqwest` with 1s polling
+  loop for live monitor data.
+
 ---
 
 ## Core Subsystems — V2.x Execution Era
@@ -343,6 +352,10 @@ crates/
   openntx-appportal  Async TUI (ratatui + crossterm). Dedicated OS thread
                      for input. Tokio background workers. Live IPC bridge
                      for real-time capture status display.
+
+  openntx-gui        Slint-based graphical frontend (Cyberpunk Dark Mode).
+                     System monitor, app grid, deploy, real-time log.
+                     Async API client via reqwest + tokio polling.
 ```
 
 **Runtime module structure (`openntx-core/src/runtime/`):**
@@ -394,7 +407,7 @@ crates/
 
 ## Test Coverage
 
-**318 tests, 0 failures.** Full breakdown:
+**327 tests, 0 failures.** Full breakdown:
 
 | Module | Tests | Coverage |
 |---|---|---|
@@ -407,6 +420,7 @@ crates/
 | `runtime::graphics` | 22 | Surface creation, HWND allocation, GDI flush, framebuffer I/O, destruction |
 | `runtime::registry` | 24 | Write-then-read, persistence, TOML validation, hive CRUD, key normalization |
 | `runtime::api` | 6 | Execute endpoint, purge endpoint, validation, error handling, 404 |
+| `openntx-gui` | 9 | App ID derivation, log state, monitor response, execute response, timestamp |
 | `profile` | 12 | CRUD, round-trip, arch serde, optional fields |
 | `capture::realtime` | 7 | inotify events, nested dirs, ordering, shutdown |
 | `capture::snapshot/diff` | 14 | Snapshots, diffs, symlinks, registry tracking |

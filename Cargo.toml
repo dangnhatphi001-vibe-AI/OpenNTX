@@ -4,6 +4,7 @@ members = [
     "crates/openntx-core",
     "crates/openntx-cli",
     "crates/openntx-appportal",
+    "crates/openntx-gui",
 ]
 
 [workspace.package]

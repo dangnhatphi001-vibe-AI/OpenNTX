@@ -1,0 +1,278 @@
+// app_window.slint — OpenNTX GUI: Cyberpunk/Industrial Dark Mode
+
+import { Button, LineEdit, ScrollView, VerticalBox, HorizontalBox } from "std-widgets.slint";
+
+// ── Color palette ────────────────────────────────────────────────────────────
+
+global CyberPalette {
+    in property <color> bg-deep: #0a0e17;
+    in property <color> bg-panel: #111827;
+    in property <color> bg-card: #1a2332;
+    in property <color> border-dim: #1e3a5f;
+    in property <color> accent-cyan: #00d4ff;
+    in property <color> accent-green: #00ff88;
+    in property <color> accent-yellow: #ffcc00;
+    in property <color> accent-red: #ff3355;
+    in property <color> text-primary: #e0e8f0;
+    in property <color> text-dim: #5a6a7a;
+    in property <color> text-label: #8899aa;
+}
+
+// ── App entry model ──────────────────────────────────────────────────────────
+
+struct AppEntry {
+    app-id: string,
+    app-name: string,
+    exe-path: string,
+    status: string,
+}
+
+// ── Main window ──────────────────────────────────────────────────────────────
+
+export component AppWindow inherits Window {
+    title: "OpenNTX — Windows Application Subsystem";
+    preferred-width: 1100px;
+    preferred-height: 750px;
+    background: CyberPalette.bg-deep;
+
+    // ── Public properties (set from Rust) ────────────────────────────────────
+    in-out property <int> total-pids: 0;
+    in-out property <string> ram-usage: "0 MB";
+    in-out property <string> cpu-quota: "max";
+    in-out property <[AppEntry]> app-list;
+    in-out property <string> log-content: "[SYSTEM] OpenNTX GUI initialized.\n";
+    in-out property <bool> is-deploying: false;
+    in-out property <string> deploy-status: "IDLE";
+    in-out property <string> exe-input-path: "";
+
+    // ── Callbacks ────────────────────────────────────────────────────────────
+    callback deploy-clicked(string);
+    callback refresh-clicked();
+
+    // ── Layout ───────────────────────────────────────────────────────────────
+    VerticalBox {
+        spacing: 0px;
+        padding: 0px;
+
+        // ── HEADER: System Monitor ───────────────────────────────────────────
+        Rectangle {
+            height: 72px;
+            background: CyberPalette.bg-panel;
+            border-width: 1px;
+            border-color: CyberPalette.border-dim;
+
+            HorizontalBox {
+                padding: 12px;
+                spacing: 24px;
+
+                Text {
+                    text: "❖ OpenNTX";
+                    font-size: 20px;
+                    font-weight: 900;
+                    color: CyberPalette.accent-cyan;
+                    vertical-stretch: 0;
+                }
+
+                Rectangle { width: 1px; background: CyberPalette.border-dim; }
+
+                VerticalBox {
+                    spacing: 2px;
+                    horizontal-stretch: 0;
+                    Text { text: "PIDS CAPTURED"; font-size: 9px; color: CyberPalette.text-label; letter-spacing: 1.5px; }
+                    Text { text: root.total-pids; font-size: 22px; font-weight: 700; color: CyberPalette.accent-green; }
+                }
+
+                VerticalBox {
+                    spacing: 2px;
+                    horizontal-stretch: 0;
+                    Text { text: "RAM USAGE"; font-size: 9px; color: CyberPalette.text-label; letter-spacing: 1.5px; }
+                    Text { text: root.ram-usage; font-size: 22px; font-weight: 700; color: CyberPalette.accent-yellow; }
+                }
+
+                VerticalBox {
+                    spacing: 2px;
+                    horizontal-stretch: 0;
+                    Text { text: "CPU QUOTA"; font-size: 9px; color: CyberPalette.text-label; letter-spacing: 1.5px; }
+                    Text { text: root.cpu-quota; font-size: 22px; font-weight: 700; color: CyberPalette.accent-cyan; }
+                }
+
+                Rectangle { horizontal-stretch: 1; }
+
+                VerticalBox {
+                    horizontal-stretch: 0;
+                    alignment: center;
+                    Rectangle {
+                        width: 12px; height: 12px; border-radius: 6px;
+                        background: root.is-deploying ? CyberPalette.accent-yellow : CyberPalette.accent-green;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 0;
+                    alignment: center;
+                    Text { text: root.deploy-status; font-size: 11px; color: CyberPalette.text-dim; }
+                }
+            }
+        }
+
+        // ── CENTER: App Grid ─────────────────────────────────────────────────
+        Rectangle {
+            vertical-stretch: 1;
+            background: CyberPalette.bg-deep;
+
+            VerticalBox {
+                padding: 16px;
+                spacing: 8px;
+
+                HorizontalBox {
+                    spacing: 8px;
+                    Text {
+                        text: "INSTALLED APPLICATIONS";
+                        font-size: 11px; font-weight: 700;
+                        color: CyberPalette.text-label;
+                        letter-spacing: 2px;
+                    }
+                    Rectangle { horizontal-stretch: 1; }
+                    Button { text: "⟳ Refresh"; clicked => { root.refresh-clicked(); } }
+                }
+
+                ScrollView {
+                    vertical-stretch: 1;
+                    VerticalBox {
+                        spacing: 6px;
+
+                        for entry in root.app-list: Rectangle {
+                            height: 56px;
+                            background: CyberPalette.bg-card;
+                            border-width: 1px;
+                            border-color: CyberPalette.border-dim;
+                            border-radius: 6px;
+
+                            HorizontalBox {
+                                padding: 12px;
+                                spacing: 16px;
+
+                                Rectangle {
+                                    width: 32px; height: 32px; border-radius: 4px;
+                                    background: CyberPalette.border-dim;
+                                    Text { text: "⊞"; font-size: 18px; color: CyberPalette.accent-cyan; }
+                                }
+
+                                VerticalBox {
+                                    spacing: 2px;
+                                    horizontal-stretch: 1;
+                                    Text { text: entry.app-name; font-size: 14px; font-weight: 600; color: CyberPalette.text-primary; }
+                                    Text { text: entry.app-id; font-size: 10px; color: CyberPalette.text-dim; }
+                                }
+
+                                VerticalBox {
+                                    horizontal-stretch: 0;
+                                    alignment: center;
+                                    Rectangle {
+                                        width: 90px; height: 24px; border-radius: 4px;
+                                        background: entry.status == "running" ? CyberPalette.accent-green : entry.status == "capturing" ? CyberPalette.accent-yellow : CyberPalette.border-dim;
+                                        Text { text: entry.status; font-size: 10px; font-weight: 700; color: CyberPalette.bg-deep; }
+                                    }
+                                }
+                            }
+                        }
+
+                        if root.app-list.length == 0: Rectangle {
+                            height: 120px;
+                            background: CyberPalette.bg-card;
+                            border-width: 1px;
+                            border-color: CyberPalette.border-dim;
+                            border-radius: 6px;
+
+                            VerticalBox {
+                                alignment: center;
+                                Text { text: "⊞"; font-size: 32px; color: CyberPalette.text-dim; }
+                                Text { text: "No applications installed yet."; font-size: 13px; color: CyberPalette.text-dim; }
+                                Text { text: "Click 'Deploy New EXE' to get started."; font-size: 11px; color: CyberPalette.text-dim; }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── FOOTER: Deploy + Log Terminal ─────────────────────────────────────
+        Rectangle {
+            height: 240px;
+            background: CyberPalette.bg-panel;
+            border-width: 1px;
+            border-color: CyberPalette.border-dim;
+
+            VerticalBox {
+                padding: 12px;
+                spacing: 8px;
+
+                HorizontalBox {
+                    spacing: 8px;
+                    height: 40px;
+
+                    Rectangle {
+                        horizontal-stretch: 1;
+                        height: 40px;
+                        border-radius: 6px;
+                        border-width: 1px;
+                        border-color: CyberPalette.border-dim;
+                        background: CyberPalette.bg-card;
+
+                        HorizontalBox {
+                            padding-left: 12px;
+                            padding-right: 12px;
+                            Text { text: "❯"; font-size: 14px; color: CyberPalette.accent-cyan; }
+                            LineEdit {
+                                horizontal-stretch: 1;
+                                text: root.exe-input-path;
+                                placeholder-text: "Enter path to .exe file...";
+                                accepted(text) => { root.exe-input-path = text; }
+                            }
+                        }
+                    }
+
+                    Button {
+                        text: root.is-deploying ? "⏳ Deploying..." : "⚡ Deploy New EXE";
+                        width: 180px;
+                        enabled: !root.is-deploying;
+                        clicked => { root.deploy-clicked(root.exe-input-path); }
+                    }
+                }
+
+                Rectangle {
+                    vertical-stretch: 1;
+                    background: #050810;
+                    border-width: 1px;
+                    border-color: CyberPalette.border-dim;
+                    border-radius: 4px;
+
+                    VerticalBox {
+                        padding: 8px;
+                        ScrollView {
+                            vertical-stretch: 1;
+                            Text {
+                                text: root.log-content;
+                                font-size: 11px;
+                                font-family: "monospace";
+                                color: CyberPalette.accent-green;
+                                wrap: word-wrap;
+                            }
+                        }
+                    }
+
+                    // LIVE indicator
+                    Rectangle {
+                        x: parent.width - 56px;
+                        y: 4px;
+                        width: 48px;
+                        height: 18px;
+                        border-radius: 3px;
+                        background: root.is-deploying ? CyberPalette.accent-red : transparent;
+                        Text { text: "LIVE"; font-size: 9px; font-weight: 900; color: CyberPalette.bg-deep; letter-spacing: 1px; }
+                    }
+                }
+            }
+        }
+    }
+}

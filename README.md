@@ -64,7 +64,7 @@ These are future research areas. See [ROADMAP.md](ROADMAP.md) for the full plan.
 
 ## Quick Demo
 
-This is the real V0.9 analysis and packaging flow. No Windows binary is executed at any step.
+This is the V1.0-alpha analysis, management, and packaging flow. No Windows binary is executed at any step.
 
 ```bash
 # 1. Analyze a Windows PE/EXE file
@@ -219,21 +219,6 @@ openntx completions zsh >> ~/.zshrc
 openntx completions fish > ~/.config/fish/completions/openntx.fish
 ```
 
-### Build a .deb Package
-
-```bash
-openntx package build <app-id>              # dry-run (default)
-openntx package build <app-id> --yes        # actually build
-openntx package build <app-id> --output dist --version 1.0.0
-```
-
-### Diagnostics
-
-```bash
-openntx doctor <path-to-exe>
-openntx doctor <app-id>
-```
-
 ---
 
 ## AppPortal
@@ -247,12 +232,14 @@ AppPortal is the user-facing terminal UI.
 Current AppPortal surfaces:
 
 - **Home** — version, registered app count, runtime status, action menu.
-- **App Library** — lists registered apps from `~/.local/share/openntx/apps/`.
-- **App Details** — manifest path, executable path, sandbox profile, DLL count, desktop launcher status, capture actions.
+- **Library** — lists registered apps from `~/.local/share/openntx/apps/` with per-app details.
+- **App Details** — manifest path, executable path, sandbox profile, DLL count, desktop launcher status, capture actions, doctor, logs.
 - **Analyze EXE** — reads PE metadata and previews generated manifests.
 - **Install Plan** — writes registry metadata only after confirmation.
-- **Desktop Launcher** — create/remove with confirmation.
-- **Capture** — Snapshot Before/After, Diff, Report, Status per registered app.
+- **Capture Tools** — Snapshot Before/After, Diff, Report, Status, Clean per registered app.
+- **Package Builder** — dry-run plan, build `.deb` with confirmation, inspect packages.
+- **Logs** — list and view run-plan diagnostic logs.
+- **Doctor** — global and per-app health diagnosis.
 - **Settings** — default sandbox, runtime backend, diagnostics, path layout.
 
 ---
@@ -295,6 +282,9 @@ The CLI and AppPortal call the core. Runtime logic must not live in the GUI.
 - OpenNTX does not execute Windows binaries or installers.
 - PE analysis reads headers and metadata only — no code execution.
 - App registry writes are local and isolated per app.
+- Bundle export/import rejects path traversal and symlink escapes.
+- Doctor repair refuses to follow unsafe symlinks.
+- All destructive operations are dry-run by default; `--yes` required for writes.
 - Capture snapshots inspect OpenNTX app directories only.
 - The `.deb` package builder uses `symlink_metadata()` to reject unsafe entries, sets 0644/0755 permissions, and builds with `--root-owner-group`.
 - The sandbox model is documented in [docs/sandbox-model.md](docs/sandbox-model.md).
@@ -314,7 +304,7 @@ The CLI and AppPortal call the core. Runtime logic must not live in the GUI.
 | 6 | Win32/NT compatibility research | Not started |
 | 7 | Compatibility database and profiles | Not started |
 | 8 | Sandboxed app-store UX | Not started |
-| V1.0-alpha | Polish, CI, visual assets, demo docs | Planned |
+| V1.0-alpha | App management, doctor, logs, config, completions, AppPortal upgrade | Done |
 
 See [ROADMAP.md](ROADMAP.md) for the full plan.
 

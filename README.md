@@ -12,19 +12,20 @@
 
 <p align="center">
   <a href="https://github.com/openntx/openntx/actions/workflows/ci.yml"><img src="https://github.com/openntx/openntx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/status-v1.2.0--alpha-orange" alt="Status">
+  <img src="https://img.shields.io/badge/status-v1.4.0--alpha-orange" alt="Status">
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="License">
   <img src="https://img.shields.io/badge/runtime-not%20implemented-lightgrey" alt="Runtime">
 </p>
 
 OpenNTX is an experimental **Windows Application Subsystem for Linux**.
 It makes Windows PE/EXE applications feel like native Linux desktop apps by
-combining PE detection, app manifests, compatibility profiles, installer
-capture, sandboxing, and desktop integration — all driven by a structured
-manifest and profile database.
+combining PE detection, app manifests, compatibility profiles, real-time
+installer capture, sandboxing, .deb packaging, and desktop integration — all
+driven by a structured manifest and profile database.
 
-> **Current status:** V1.2.0-alpha — analysis, profiling, and packaging are
-> implemented. Runtime execution is **not** implemented yet.
+> **Current status:** V1.4.0-alpha — analysis, profiling, real-time capture,
+> and native .deb packaging are implemented. Runtime execution is **not**
+> implemented yet.
 
 ---
 
@@ -63,9 +64,10 @@ The execution chain:
 ```
 
 The user drops an EXE. OpenNTX analyses it, generates a manifest, resolves a
-compatibility profile, maps the filesystem and registry, applies a sandbox
-policy, and produces a native Linux desktop launcher. The application runs in
-an isolated environment with structured logs and clear permission boundaries.
+compatibility profile, captures installer behaviour in real time, maps the
+filesystem and registry, applies a sandbox policy, and packages everything
+into a native `.deb` with a Linux desktop launcher. The application appears
+in the system menu like any other installed program.
 
 No prefixes. No wrapper scripts. No manual command lines.
 
@@ -79,7 +81,7 @@ No prefixes. No wrapper scripts. No manual command lines.
   App Management (rename, duplicate, export/import), Doctor/Integrity
   Checks, Logs, Config System, Shell Completions.
 
-- [x] **V1.1.0 — AppPortal UX & Async Demo Flow**
+- [x] **V1.1.0 — AppPortal UX & Async Event Loop**
   Async TUI with crossterm event system (dedicated OS thread, no tokio
   blocking), Library/Details/Capture/Package/Doctor/Logs screens,
   background worker tasks, graceful terminal teardown with panic hook.
@@ -90,10 +92,134 @@ No prefixes. No wrapper scripts. No manual command lines.
   with JSON persistence at `~/.local/share/openntx/profiles/`, integration
   into AppPortal TUI state.
 
-- [ ] **V1.3.0 — Advanced Installer Capture Workflow**
-  Guided multi-step capture: pre-install snapshot, installer execution
-  sandbox, post-install snapshot, automated diff analysis, profile
-  auto-generation from capture data.
+- [x] **V1.3.0 — Advanced Installer Capture Workflow**
+  Real-time filesystem capture engine using Linux `inotify`. Replaces the
+  old snapshot-before/after + diff mechanism with zero-noise streaming
+  events. See [V1.3.0 details](#v130--real-time-capture-engine) below.
+
+- [x] **V1.4.0 — Debian Package Builder & Linux Integration**
+  Profile-driven `.deb` package builder with automatic `DEBIAN/control`
+  generation, native `.desktop` launcher, cross-filesystem safety, and
+  `dpkg-deb` toolchain integration. See
+  [V1.4.0 details](#v140--debian-package-builder) below.
+
+---
+
+## V1.3.0 — Real-time Capture Engine
+
+The V1.3 capture system replaces the old snapshot-before/after + diff
+mechanism (which required two full directory scans and produced noisy,
+diff-based output) with a **streaming event model** built on Linux `inotify`.
+
+### Architecture
+
+```text
+  ┌──────────────────────┐   inotify (non-blocking)   ┌─────────────────┐
+  │  OS thread            │ ─────────────────────────► │  mpsc::Receiver  │
+  │  inotify fd polling   │   CaptureEvent stream      │  caller thread   │
+  └──────────────────────┘                             └─────────────────┘
+```
+
+### How it works
+
+1. **Dicated OS thread** — `CaptureSession::start_tracking()` spawns a
+   dedicated OS thread (via `std::thread::Builder`) that owns the inotify
+   instance. This thread never touches the tokio async executor.
+
+2. **Non-blocking polling** — The inotify file descriptor is set to
+   `O_NONBLOCK` via `fcntl(F_SETFL)` immediately after `Inotify::init()`.
+   The thread calls `read_events()` in a tight loop; when no events are
+   queued, it receives `WouldBlock` and sleeps for 250 ms before retrying.
+   This sleep window also serves as the shutdown check: when the
+   `mpsc::Receiver` is dropped, the next `tx.send()` fails and the thread
+   exits cleanly.
+
+3. **Recursive auto-watch** — On startup, every subdirectory under the
+   target directory is registered with `inotify.add_watch()`. When a
+   `CREATE` + `ISDIR` event arrives (a new directory was created), the
+   tracker immediately adds a watch for it — so files created inside new
+   directories are captured without manual intervention.
+
+4. **Event filtering** — Only `CREATE`, `MODIFY`, and `DELETE` events are
+   forwarded. `ACCESS`, `OPEN`, `CLOSE_WRITE`, `ATTRIB`, and other
+   read-only metadata events are silently ignored.
+
+5. **Symlink rejection** — Consistent with the existing security model in
+   `snapshot.rs`: every directory is verified with `symlink_metadata()`
+   before watching, and the `DONT_FOLLOW` watch flag prevents the kernel
+   from following symlinks.
+
+### Events
+
+```rust
+pub enum CaptureEvent {
+    FileCreated(PathBuf),   // A file or directory was created
+    FileModified(PathBuf),  // A file was modified
+    FileDeleted(PathBuf),   // A file or directory was deleted
+}
+```
+
+### Test coverage
+
+9 tests covering: file creation, modification, deletion, nested directory
+events, file-in-new-subdirectory tracking, event ordering, receiver drop
+shutdown, and error paths.
+
+---
+
+## V1.4.0 — Debian Package Builder
+
+The V1.4 package builder takes a `CompatProfile` (from the V1.2 profile
+database) and produces a standards-compliant `.deb` package that installs
+the Windows application as a native Linux desktop application.
+
+### Build lifecycle
+
+```text
+  CompatProfile
+       │
+       ▼
+  DebBuilder::new(profile)
+       │
+       ├── prepare_workspace()        ← /tmp/openntx_builder_<app_id>/
+       │     DEBIAN/                      control file goes here
+       │     opt/openntx/apps/<id>/       app files go here
+       │     usr/share/applications/      .desktop launcher goes here
+       │
+       ├── generate_control_file()    ← DEBIAN/control
+       │     Package, Version, Architecture (amd64/i386),
+       │     Depends: openntx-cli, Maintainer, Description
+       │
+       ├── generate_desktop_entry()   ← .desktop launcher
+       │     Exec=openntx run <app_id>
+       │     X-OpenNTX-AppId, X-OpenNTX-Publisher
+       │
+       └── build_deb()                ← dpkg-deb --root-owner-group --build
+             Cross-filesystem rename fallback (copy+remove)
+             Auto-cleanup staging on success
+             Preserved on failure for debugging
+```
+
+### Key design decisions
+
+- **Profile-driven** — Architecture, version, name, and publisher all come
+  from the `CompatProfile`. No manual configuration needed.
+- **Native desktop integration** — The `.desktop` file is installed to
+  `usr/share/applications/`, so the Windows application appears in the
+  system application menu alongside native Linux apps.
+- **Cross-filesystem safety** — The `.deb` is built in the system temp
+  directory (so Unix permission normalisation works on any filesystem),
+  then moved to the output directory with a `rename()` → `copy()+remove()`
+  fallback for cross-filesystem moves.
+- **Staging auto-cleanup** — The staging workspace is removed on success
+  and preserved on failure, so the user can inspect the build tree.
+
+### Test coverage
+
+10 tests covering: workspace structure, idempotency, control file content,
+architecture mapping (x86 → i386, x86_64 → amd64), desktop entry content,
+missing control file error, filename derivation, builder options, and
+dpkg-deb availability.
 
 ---
 
@@ -107,8 +233,9 @@ No prefixes. No wrapper scripts. No manual command lines.
 crates/
   openntx-core       Core engine — data models, validation, path layout,
                      PE analysis, manifest generation, compatibility
-                     profiles, runtime planning, desktop integration,
-                     capture, packaging, doctor, logs, config, sandbox.
+                     profiles, real-time capture (inotify), package
+                     building (.deb), runtime planning, desktop
+                     integration, doctor, logs, config, sandbox.
 
   openntx-cli        Command-line interface for automation, diagnostics,
                      and scripted workflows.  JSON output for every
@@ -127,6 +254,8 @@ crates/
 | `crossterm` | Terminal input/output (raw mode, alternate screen) |
 | `tokio` | Async runtime for background tasks |
 | `serde` / `serde_json` | JSON serialization for manifests, profiles, configs |
+| `inotify` | Linux filesystem event monitoring (real-time capture) |
+| `libc` | Low-level POSIX calls (`fcntl`, `O_NONBLOCK`) |
 | `thiserror` | Structured error types |
 | `sha2` | SHA-256 hashing for integrity checks |
 | `tar` / `flate2` | Export/import bundle compression |
@@ -142,6 +271,34 @@ crates/
 | Capture Report | `schemas/capture-report.schema.json` |
 | Capture Snapshot | `schemas/capture-snapshot.schema.json` |
 | Capture Diff | `schemas/capture-diff.schema.json` |
+
+---
+
+## Towards V2.x — Execution & Integration
+
+The V1.x series built the **identity and packaging layer**: every Windows
+application now has a manifest, a compatibility profile, captured filesystem
+and registry behaviour, and a native `.deb` package with a desktop launcher.
+
+V2.x will add the **execution layer**:
+
+- **`binfmt_misc` integration** — Register the OpenNTX runtime as a Linux
+  binary format handler so that `.exe` files are transparently executed
+  through the OpenNTX subsystem when double-clicked or invoked from the
+  shell.
+- **OpenNTX Runtime** — A sandboxed execution environment that reads the
+  compatibility profile at launch time, sets up the filesystem overlay,
+  applies registry mappings, enforces the sandbox policy, and runs the
+  Windows application inside an isolated Wine-compatible (but
+  Wine-independent) container.
+- **Runtime backend abstraction** — The `NotImplementedBackend` placeholder
+  will be replaced with real backends: a Wine-based compatibility backend
+  for broad application support, and a future native PE/NT/Win32 backend
+  for research.
+
+The compatibility profile database, the sandbox model, and the
+manifest-driven architecture exist specifically so that OpenNTX can evolve
+its own runtime without depending on external compatibility layers.
 
 ---
 
@@ -177,11 +334,14 @@ cargo build --release
 # Analyse a Windows EXE
 ./target/release/openntx analyze /path/to/app.exe
 
-# Register an app
+# Register an app and load its profile
 ./target/release/openntx register /path/to/app.exe
 
 # Launch the TUI
 ./target/release/openntx-appportal
+
+# Build a .deb package
+./target/release/openntx package build <app-id> --yes
 
 # Run doctor diagnostics
 ./target/release/openntx doctor --global
@@ -198,7 +358,7 @@ cargo build --release
 | [docs/manifest-spec.md](docs/manifest-spec.md) | App manifest specification |
 | [docs/sandbox-model.md](docs/sandbox-model.md) | Sandbox and isolation model |
 | [docs/runtime-design.md](docs/runtime-design.md) | Runtime backend design |
-| [docs/capture-snapshot.md](docs/installer-capture.md) | Installer capture workflow |
+| [docs/installer-capture.md](docs/installer-capture.md) | Installer capture workflow |
 | [docs/packaging.md](docs/packaging.md) | .deb package builder |
 | [docs/desktop-integration.md](docs/desktop-integration.md) | Desktop launcher generation |
 | [docs/testing.md](docs/testing.md) | Test strategy and coverage |

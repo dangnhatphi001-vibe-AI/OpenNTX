@@ -124,6 +124,44 @@ impl ApiBridgeServer {
     }
 }
 
+// ── Custom JSON extractor with 422 on rejection ─────────────────────────────
+
+/// Wrapper around `axum::Json` that returns `422 Unprocessable Entity`
+/// instead of the default `400 Bad Request` when JSON parsing fails.
+struct ValidJson<T>(T);
+
+#[axum::async_trait]
+impl<T, S> axum::extract::FromRequest<S> for ValidJson<T>
+where
+    T: serde::de::DeserializeOwned,
+    S: Send + Sync,
+{
+    type Rejection = (StatusCode, Json<serde_json::Value>);
+
+    async fn from_request(
+        req: axum::extract::Request,
+        state: &S,
+    ) -> std::result::Result<Self, Self::Rejection> {
+        match Json::<T>::from_request(req, state).await {
+            Ok(Json(value)) => Ok(ValidJson(value)),
+            Err(rejection) => {
+                let status = rejection.status();
+                let message = rejection.body_text();
+                // Override 400 → 422 for JSON parse errors.
+                let status = if status == StatusCode::BAD_REQUEST {
+                    StatusCode::UNPROCESSABLE_ENTITY
+                } else {
+                    status
+                };
+                Err((
+                    status,
+                    Json(serde_json::json!({"status": "error", "message": message})),
+                ))
+            }
+        }
+    }
+}
+
 // ── Request handlers ─────────────────────────────────────────────────────────
 
 /// Handle `POST /api/v1/execute`.
@@ -132,7 +170,7 @@ impl ApiBridgeServer {
 /// and delegates to `OpenNTXExecutor::execute_pe`.
 async fn handle_execute(
     State(state): State<Arc<AppState>>,
-    Json(body): Json<ExecuteRequest>,
+    ValidJson(body): ValidJson<ExecuteRequest>,
 ) -> impl IntoResponse {
     if body.app_id.is_empty() || body.exe_path.is_empty() {
         return (
@@ -175,7 +213,7 @@ async fn handle_execute(
 /// processes in the app's cgroup.
 async fn handle_purge(
     State(state): State<Arc<AppState>>,
-    Json(body): Json<PurgeRequest>,
+    ValidJson(body): ValidJson<PurgeRequest>,
 ) -> impl IntoResponse {
     if body.app_id.is_empty() {
         return (

@@ -1,4 +1,5 @@
 pub mod app_id;
+pub mod builder;
 pub mod capture;
 pub mod config;
 pub mod desktop;

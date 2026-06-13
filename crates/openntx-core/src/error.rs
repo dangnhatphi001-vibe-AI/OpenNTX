@@ -41,6 +41,21 @@ pub enum OpenNtxError {
 
     #[error("diagnostic warning: {0}")]
     Diagnostic(String),
+
+    #[error("permission denied: {0}")]
+    PermissionDenied(String),
+
+    #[error("binfmt registration failed: {0}")]
+    BinfmtRegistration(String),
+
+    #[error("binfmt unregistration failed: {0}")]
+    BinfmtUnregistration(String),
+
+    #[error("runtime execution failed: {0}")]
+    RuntimeExecution(String),
+
+    #[error("wine prefix error: {0}")]
+    WinePrefix(String),
 }
 
 pub type Result<T> = std::result::Result<T, OpenNtxError>;

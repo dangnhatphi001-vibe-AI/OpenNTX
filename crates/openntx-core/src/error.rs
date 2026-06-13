@@ -56,6 +56,15 @@ pub enum OpenNtxError {
 
     #[error("wine prefix error: {0}")]
     WinePrefix(String),
+
+    #[error("cgroup creation failed: {0}")]
+    CgroupCreationFailed(String),
+
+    #[error("cgroup write failed: {0}")]
+    CgroupWriteFailed(String),
+
+    #[error("namespace unshare failed: {0}")]
+    NamespaceUnshareFailed(String),
 }
 
 pub type Result<T> = std::result::Result<T, OpenNtxError>;

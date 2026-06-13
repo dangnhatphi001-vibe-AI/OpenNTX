@@ -20,7 +20,7 @@ use crate::profile::{
     AppMetadata, Arch, CompatProfile, FilesystemRules, InstallerBehavior, ProfileManager,
     RegistryRules, RuntimeReqs,
 };
-use crate::runtime::executor::OpenNTXExecutor;
+use crate::runtime::executor::{OpenNTXExecutor, SecurityConfig};
 use crate::runtime::ipc::{CaptureStatusMessage, RuntimeIpcClient};
 use crate::{OpenNtxError, Result};
 use sha2::{Digest, Sha256};
@@ -194,8 +194,9 @@ impl RuntimeEntrypoint {
         };
 
         if has_profile {
-            // Profile exists — direct execution via the executor.
-            return self.executor.execute_pe(exe_path, app_args);
+            // Profile exists — direct execution with hardened security.
+            let security = SecurityConfig::hardened();
+            return self.executor.execute_pe(exe_path, app_args, &security);
         }
 
         // ── Auto-fallback: first-time execution ──────────────────────────
@@ -245,7 +246,9 @@ impl RuntimeEntrypoint {
             status: "Executing".to_string(),
             files_tracked: 0,
         });
-        let exec_result = self.executor.execute_pe(exe_path, app_args);
+        // First run uses permissive security (capture needs filesystem access).
+        let security = SecurityConfig::permissive();
+        let exec_result = self.executor.execute_pe(exe_path, app_args, &security);
 
         // 6. Collect captured events and report progress via IPC.
         let mut captured_paths: HashSet<PathBuf> = HashSet::new();

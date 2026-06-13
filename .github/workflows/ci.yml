@@ -1,28 +1,29 @@
-name: CI
+name: OpenNTX CI
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
-      - master
+    branches: [ main ]
 
 jobs:
   rust:
-    name: Rust workspace
+    name: Rust workspace checks
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Show toolchain
         run: |
-          rustup toolchain install stable --profile minimal --component rustfmt
-          rustup default stable
+          rustc --version
+          cargo --version
 
       - name: Check formatting
         run: cargo fmt --all -- --check
@@ -33,5 +34,5 @@ jobs:
       - name: Test workspace
         run: cargo test --workspace
 
-      - name: Run development checks
-        run: tools/dev-check.sh
+      - name: Run OpenNTX dev check
+        run: bash tools/dev-check.sh

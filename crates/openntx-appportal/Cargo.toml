@@ -5,9 +5,23 @@ edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 repository.workspace = true
-description = "Lightweight registry-backed AppPortal TUI for the OpenNTX source-available V0.8 foundation."
+description = "Async TUI AppPortal for the OpenNTX Windows app management system."
 license-file = "../../LICENSE"
 
 [dependencies]
 openntx-core = { path = "../openntx-core" }
 serde_json.workspace = true
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# TUI rendering
+ratatui = "0.29"
+
+# Terminal input handling
+crossterm = { version = "0.28", features = ["event-stream"] }
+
+# Error handling
+anyhow = "1"
+
+

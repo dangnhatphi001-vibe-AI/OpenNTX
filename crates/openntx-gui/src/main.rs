@@ -178,10 +178,9 @@ async fn main() -> Result<(), slint::PlatformError> {
                 let result = send_execute(&client, &exe, false).await;
 
                 let (success, message) = match result {
-                    Some(resp) if resp.status == "success" => (
-                        true,
-                        format!("[OK] Execution started for: {}", resp.app_id),
-                    ),
+                    Some(resp) if resp.status == "success" => {
+                        (true, format!("[OK] Execution started for: {}", resp.app_id))
+                    }
                     Some(resp) => (
                         false,
                         format!(
@@ -315,7 +314,11 @@ mod tests {
         // Should have at most 500 lines.
         let content = log.to_string();
         let line_count = content.lines().count();
-        assert!(line_count <= 500, "expected <= 500 lines, got {}", line_count);
+        assert!(
+            line_count <= 500,
+            "expected <= 500 lines, got {}",
+            line_count
+        );
         // The earliest lines should be gone.
         assert!(!content.contains("line 0"));
         // The latest lines should be present.

@@ -21,6 +21,7 @@ use crate::profile::{
     RegistryRules, RuntimeReqs,
 };
 use crate::runtime::executor::OpenNTXExecutor;
+use crate::runtime::ipc::{CaptureStatusMessage, RuntimeIpcClient};
 use crate::{OpenNtxError, Result};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -230,25 +231,43 @@ impl RuntimeEntrypoint {
         let session = CaptureSession::new(app_sandbox.clone());
         let rx = session.start_tracking()?;
 
-        // 4. Execute the PE file (first run, no profile-guided isolation).
+        // 4. Initialize IPC client for live status reporting to TUI.
+        let ipc_client = RuntimeIpcClient::new(None);
+        ipc_client.try_send_status(&CaptureStatusMessage {
+            app_id: app_id.to_string(),
+            status: "Capturing".to_string(),
+            files_tracked: 0,
+        });
+
+        // 5. Execute the PE file (first run, no profile-guided isolation).
+        ipc_client.try_send_status(&CaptureStatusMessage {
+            app_id: app_id.to_string(),
+            status: "Executing".to_string(),
+            files_tracked: 0,
+        });
         let exec_result = self.executor.execute_pe(exe_path, app_args);
 
-        // 5. Collect captured events (receiver is dropped at end of scope,
-        //    which signals the background thread to exit).
+        // 6. Collect captured events and report progress via IPC.
         let mut captured_paths: HashSet<PathBuf> = HashSet::new();
         while let Ok(event) = rx.try_recv() {
             match event {
                 CaptureEvent::FileCreated(p) | CaptureEvent::FileModified(p) => {
                     captured_paths.insert(p);
+                    // Report every new event to the TUI.
+                    ipc_client.try_send_status(&CaptureStatusMessage {
+                        app_id: app_id.to_string(),
+                        status: "Capturing".to_string(),
+                        files_tracked: captured_paths.len() as u32,
+                    });
                 }
                 CaptureEvent::FileDeleted(_) => { /* ignore deletes */ }
             }
         }
 
-        // 6. Propagate execution errors after capture is collected.
+        // 7. Propagate execution errors after capture is collected.
         exec_result?;
 
-        // 7. Build a CompatProfile from the captured data.
+        // 8. Build a CompatProfile from the captured data.
         let profile = build_profile_from_capture(
             app_id,
             filename,
@@ -256,8 +275,15 @@ impl RuntimeEntrypoint {
             &app_sandbox,
         );
 
-        // 8. Persist the profile.
+        // 9. Persist the profile.
         self.profile_manager.save_profile(&profile)?;
+
+        // 10. Report completion via IPC.
+        ipc_client.try_send_status(&CaptureStatusMessage {
+            app_id: app_id.to_string(),
+            status: "Complete".to_string(),
+            files_tracked: captured_paths.len() as u32,
+        });
 
         Ok(())
     }

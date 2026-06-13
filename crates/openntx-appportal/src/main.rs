@@ -28,6 +28,7 @@ use crossterm::{
 use events::{AppEvent, EventHandler, EventSender};
 use openntx_core::logs::show_log;
 use openntx_core::registry::AppRegistry;
+use openntx_core::runtime::RuntimeIpcServer;
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
 use std::panic;
@@ -91,12 +92,37 @@ async fn main() -> Result<()> {
     // ── 4. Event system (dedicated OS thread, NOT tokio::spawn) ───────────────
     let events = EventHandler::new();
 
-    // ── 5. Run the async application loop ────────────────────────────────────
+    // ── 5. IPC server for live capture status from the runtime ───────────────
+    // Start the UDS server and spawn a forwarding thread that converts
+    // IPC messages into AppEvent::IpcCaptureStatus for the main loop.
+    let _ipc_server = match RuntimeIpcServer::start(None) {
+        Ok((server, rx)) => {
+            let event_tx = events.sender();
+            std::thread::Builder::new()
+                .name("openntx-ipc-forwarder".into())
+                .spawn(move || {
+                    while let Ok(msg) = rx.recv() {
+                        if let Ok(json) = serde_json::to_string(&msg) {
+                            let _ = event_tx.send(AppEvent::IpcCaptureStatus(json));
+                        }
+                    }
+                })
+                .ok();
+            Some(server)
+        }
+        Err(e) => {
+            eprintln!("[openntx-appportal] IPC server not started: {e}");
+            None
+        }
+    };
+
+    // ── 6. Run the async application loop ────────────────────────────────────
     let run_result = run_app(&mut terminal, &mut app, &registry, events).await;
 
-    // ── 6. Cleanup ───────────────────────────────────────────────────────────
+    // ── 7. Cleanup ───────────────────────────────────────────────────────────
     // `_guard` drops here → `restore_terminal()` is called.
     // `events` (and its sender clones) drop → OS reader thread exits.
+    // `_ipc_server` drops here → socket file is cleaned up.
 
     run_result
 }
@@ -136,6 +162,7 @@ async fn run_app(
 
             AppEvent::Tick => {
                 app.tick_feedback();
+                app.tick_live_capture();
                 if app.is_loading {
                     app.advance_spinner();
                 }
@@ -147,6 +174,10 @@ async fn run_app(
 
             AppEvent::WorkerError(msg) => {
                 app.handle_worker_error(msg);
+            }
+
+            AppEvent::IpcCaptureStatus(json) => {
+                app.handle_ipc_capture_status(json);
             }
 
             AppEvent::Quit => {

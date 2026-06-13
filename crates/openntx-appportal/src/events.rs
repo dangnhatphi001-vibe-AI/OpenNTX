@@ -39,6 +39,9 @@ pub enum AppEvent {
     /// A worker task returned an error.
     WorkerError(String),
 
+    /// Live capture status update from the runtime IPC server.
+    IpcCaptureStatus(String),
+
     /// Request a clean shutdown.
     Quit,
 }

@@ -172,33 +172,64 @@ pub fn draw(f: &mut Frame, app: &AppState) {
     }
 
     // ── 3. Footer (Bottom - 1 line) ──
+    // If a live capture status is active, show it as a prominent banner
+    // with alternating colors (blink effect based on spinner frame).
     let footer_block = Block::default().style(Style::default().bg(Color::Rgb(15, 15, 20)));
-    let footer_spans = match &app.feedback {
-        Feedback::None => vec![
-            Span::styled("[↑↓] ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-            Span::styled("Điều hướng", Style::default().fg(Color::White)),
-            Span::styled("  |  ", Style::default().fg(Color::DarkGray)),
-            Span::styled("[Enter] ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-            Span::styled("Chọn", Style::default().fg(Color::White)),
-            Span::styled("  |  ", Style::default().fg(Color::DarkGray)),
-            Span::styled("[Esc/Backspace] ", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-            Span::styled("Quay lại", Style::default().fg(Color::White)),
-            Span::styled("  |  ", Style::default().fg(Color::DarkGray)),
-            Span::styled("[q] ", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
-            Span::styled("Thoát", Style::default().fg(Color::White)),
-        ],
-        Feedback::Info(msg) => vec![
-            Span::styled("ℹ ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-            Span::styled(msg, Style::default().fg(Color::Cyan)),
-        ],
-        Feedback::Success(msg) => vec![
-            Span::styled("✔ ", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
-            Span::styled(msg, Style::default().fg(Color::Green)),
-        ],
-        Feedback::Error(msg) => vec![
-            Span::styled("✘ ", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
-            Span::styled(msg, Style::default().fg(Color::Red)),
-        ],
+    let footer_spans = if let Some(ref capture_status) = app.live_capture_status {
+        // Blink effect: alternate between Red and Yellow based on spinner frame.
+        let blink_color = if app.spinner_frame % 2 == 0 {
+            Color::Red
+        } else {
+            Color::Yellow
+        };
+        vec![
+            Span::styled(
+                "⚠ ",
+                Style::default().fg(blink_color).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                "[KERNEL] ",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                "SYSTEM IS CAPTURING: ",
+                Style::default()
+                    .fg(blink_color)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                capture_status,
+                Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+            ),
+        ]
+    } else {
+        match &app.feedback {
+            Feedback::None => vec![
+                Span::styled("[↑↓] ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                Span::styled("Điều hướng", Style::default().fg(Color::White)),
+                Span::styled("  |  ", Style::default().fg(Color::DarkGray)),
+                Span::styled("[Enter] ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                Span::styled("Chọn", Style::default().fg(Color::White)),
+                Span::styled("  |  ", Style::default().fg(Color::DarkGray)),
+                Span::styled("[Esc/Backspace] ", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled("Quay lại", Style::default().fg(Color::White)),
+                Span::styled("  |  ", Style::default().fg(Color::DarkGray)),
+                Span::styled("[q] ", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+                Span::styled("Thoát", Style::default().fg(Color::White)),
+            ],
+            Feedback::Info(msg) => vec![
+                Span::styled("ℹ ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                Span::styled(msg, Style::default().fg(Color::Cyan)),
+            ],
+            Feedback::Success(msg) => vec![
+                Span::styled("✔ ", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+                Span::styled(msg, Style::default().fg(Color::Green)),
+            ],
+            Feedback::Error(msg) => vec![
+                Span::styled("✘ ", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+                Span::styled(msg, Style::default().fg(Color::Red)),
+            ],
+        }
     };
 
     f.render_widget(

@@ -118,6 +118,9 @@ pub struct AppState {
     // ── compatibility profiles (loaded from disk at startup) ──
     pub profiles: Vec<CompatProfile>,
     pub selected_profile_index: usize,
+
+    // ── live capture status from runtime IPC ──
+    pub live_capture_status: Option<String>,
 }
 
 impl AppState {
@@ -148,6 +151,7 @@ impl AppState {
             doctor_sub_index: 0,
             profiles: Vec::new(),
             selected_profile_index: 0,
+            live_capture_status: None,
         }
     }
 
@@ -694,5 +698,57 @@ impl AppState {
     pub fn handle_worker_error(&mut self, msg: String) {
         self.stop_loading();
         self.set_error(msg);
+    }
+
+    /// Called from `main.rs` when `AppEvent::IpcCaptureStatus` arrives.
+    ///
+    /// Updates the live capture status string.  If the status is `"Complete"`,
+    /// the status is cleared after a short delay (on the next tick cycle).
+    pub fn handle_ipc_capture_status(&mut self, status_json: String) {
+        // Parse to extract human-readable info.
+        if let Ok(msg) = serde_json::from_str::<serde_json::Value>(&status_json) {
+            let app_id = msg
+                .get("app_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+            let status = msg
+                .get("status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Unknown");
+            let files = msg
+                .get("files_tracked")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0);
+
+            if status == "Complete" {
+                self.live_capture_status = Some(format!(
+                    "CAPTURE COMPLETE: {} ({} files tracked)",
+                    app_id, files
+                ));
+                // Auto-clear after a few ticks.
+                self.feedback_ttl = 20;
+            } else {
+                self.live_capture_status = Some(format!(
+                    "{}: {} — {} files tracked",
+                    status, app_id, files
+                ));
+            }
+        } else {
+            // Fallback: store raw string.
+            self.live_capture_status = Some(status_json);
+        }
+    }
+
+    /// Called every tick; clears live_capture_status when the TTL expires.
+    pub fn tick_live_capture(&mut self) {
+        // If status contains "COMPLETE", count down and clear.
+        if let Some(ref s) = self.live_capture_status {
+            if s.contains("COMPLETE") && self.feedback_ttl > 0 {
+                self.feedback_ttl -= 1;
+                if self.feedback_ttl == 0 {
+                    self.live_capture_status = None;
+                }
+            }
+        }
     }
 }

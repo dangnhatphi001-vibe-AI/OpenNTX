@@ -50,9 +50,7 @@ impl CaptureStatusMessage {
     pub fn from_json_line(line: &str) -> Result<Self> {
         let trimmed = line.trim();
         if trimmed.is_empty() {
-            return Err(OpenNtxError::InvalidInput(
-                "empty IPC message".to_string(),
-            ));
+            return Err(OpenNtxError::InvalidInput("empty IPC message".to_string()));
         }
         let msg: Self = serde_json::from_str(trimmed)?;
         Ok(msg)
@@ -181,9 +179,7 @@ impl RuntimeIpcServer {
     ) -> Result<()> {
         let reader = BufReader::new(stream);
         for line in reader.lines() {
-            let line = line.map_err(|source| {
-                OpenNtxError::io("ipc-connection", source)
-            })?;
+            let line = line.map_err(|source| OpenNtxError::io("ipc-connection", source))?;
 
             let msg = CaptureStatusMessage::from_json_line(&line)?;
             if tx.send(msg).is_err() {
@@ -226,9 +222,8 @@ impl RuntimeIpcClient {
     /// Non-blocking: if the server is not running, the error is returned
     /// but does **not** panic.
     pub fn send_status(&self, message: &CaptureStatusMessage) -> Result<()> {
-        let mut stream = UnixStream::connect(&self.socket_path).map_err(|source| {
-            OpenNtxError::io(&self.socket_path, source)
-        })?;
+        let mut stream = UnixStream::connect(&self.socket_path)
+            .map_err(|source| OpenNtxError::io(&self.socket_path, source))?;
 
         let json_line = message.to_json_line()?;
         stream

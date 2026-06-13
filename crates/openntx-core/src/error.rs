@@ -69,7 +69,8 @@ pub enum OpenNtxError {
     #[error("reaper process kill failed: {0}")]
     ReaperProcessKillFailed(String),
 
-    #[error("cgroup cleanup failed: {0}")]    CgroupCleanupFailed(String),
+    #[error("cgroup cleanup failed: {0}")]
+    CgroupCleanupFailed(String),
 
     #[error("graphics context creation failed: {0}")]
     GraphicsContextCreationFailed(String),

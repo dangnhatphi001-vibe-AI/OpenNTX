@@ -116,12 +116,7 @@ impl VirtualRegistry {
     /// # Errors
     ///
     /// - `RegistryKeyInvalid` if the hive name is not a valid Windows hive.
-    pub fn get_value(
-        &self,
-        hive: &str,
-        key: &str,
-        value_name: &str,
-    ) -> Result<Option<String>> {
+    pub fn get_value(&self, hive: &str, key: &str, value_name: &str) -> Result<Option<String>> {
         validate_hive(hive)?;
 
         let normalized_key = normalize_key(key);
@@ -177,12 +172,7 @@ impl VirtualRegistry {
     /// Delete a specific value from a key.
     ///
     /// Returns `true` if the value existed and was removed.
-    pub fn delete_value(
-        &mut self,
-        hive: &str,
-        key: &str,
-        value_name: &str,
-    ) -> Result<bool> {
+    pub fn delete_value(&mut self, hive: &str, key: &str, value_name: &str) -> Result<bool> {
         validate_hive(hive)?;
 
         let normalized_key = normalize_key(key);
@@ -205,11 +195,7 @@ impl VirtualRegistry {
     }
 
     /// List all value names under a specific key.
-    pub fn list_values(
-        &self,
-        hive: &str,
-        key: &str,
-    ) -> Result<Vec<String>> {
+    pub fn list_values(&self, hive: &str, key: &str) -> Result<Vec<String>> {
         validate_hive(hive)?;
 
         let normalized_key = normalize_key(key);
@@ -224,11 +210,7 @@ impl VirtualRegistry {
     }
 
     /// List all subkeys under a hive/key prefix.
-    pub fn list_keys(
-        &self,
-        hive: &str,
-        prefix: &str,
-    ) -> Result<Vec<String>> {
+    pub fn list_keys(&self, hive: &str, prefix: &str) -> Result<Vec<String>> {
         validate_hive(hive)?;
 
         let normalized_prefix = normalize_key(prefix);
@@ -289,11 +271,7 @@ impl VirtualRegistry {
     }
 
     /// Recursively walk a TOML table tree and populate the registry data.
-    fn walk_toml_table(
-        table: &toml::Table,
-        path: &mut Vec<String>,
-        data: &mut RegistryData,
-    ) {
+    fn walk_toml_table(table: &toml::Table, path: &mut Vec<String>, data: &mut RegistryData) {
         for (key, value) in table {
             match value {
                 toml::Value::Table(sub_table) => {
@@ -378,10 +356,7 @@ impl VirtualRegistry {
                 if key_path.is_empty() {
                     // Values directly under the hive.
                     for (name, data) in values {
-                        hive_table.insert(
-                            name.clone(),
-                            toml::Value::String(data.clone()),
-                        );
+                        hive_table.insert(name.clone(), toml::Value::String(data.clone()));
                     }
                 } else {
                     // Build nested table path.
@@ -393,13 +368,9 @@ impl VirtualRegistry {
             root.insert(hive.clone(), toml::Value::Table(hive_table));
         }
 
-        let output = toml::to_string_pretty(&toml::Value::Table(root))
-            .map_err(|e| {
-                OpenNtxError::RegistryStorageError(format!(
-                    "TOML serialization failed: {}",
-                    e
-                ))
-            })?;
+        let output = toml::to_string_pretty(&toml::Value::Table(root)).map_err(|e| {
+            OpenNtxError::RegistryStorageError(format!("TOML serialization failed: {}", e))
+        })?;
 
         Ok(output)
     }
@@ -421,17 +392,11 @@ fn validate_hive(hive: &str) -> Result<()> {
 /// Normalize a registry key path: convert forward slashes to backslashes
 /// and trim trailing backslashes.
 fn normalize_key(key: &str) -> String {
-    key.replace('/', "\\")
-        .trim_end_matches('\\')
-        .to_string()
+    key.replace('/', "\\").trim_end_matches('\\').to_string()
 }
 
 /// Recursively insert values into a nested TOML table structure.
-fn insert_nested(
-    table: &mut toml::Table,
-    segments: &[&str],
-    values: &HashMap<String, String>,
-) {
+fn insert_nested(table: &mut toml::Table, segments: &[&str], values: &HashMap<String, String>) {
     if segments.is_empty() {
         return;
     }
@@ -500,15 +465,18 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            reg.get_value("HKLM", "Software\\Microsoft", "Version").unwrap(),
+            reg.get_value("HKLM", "Software\\Microsoft", "Version")
+                .unwrap(),
             Some("10.0".to_string())
         );
         assert_eq!(
-            reg.get_value("HKLM", "Software\\Microsoft", "ProductName").unwrap(),
+            reg.get_value("HKLM", "Software\\Microsoft", "ProductName")
+                .unwrap(),
             Some("Windows 10".to_string())
         );
         assert_eq!(
-            reg.get_value("HKLM", "Software\\Microsoft", "Build").unwrap(),
+            reg.get_value("HKLM", "Software\\Microsoft", "Build")
+                .unwrap(),
             Some("19041".to_string())
         );
     }
@@ -566,9 +534,7 @@ mod tests {
 
         {
             let reg = VirtualRegistry::new(dir.path());
-            let val = reg
-                .get_value("HKLM", "Software\\Test", "Persist")
-                .unwrap();
+            let val = reg.get_value("HKLM", "Software\\Test", "Persist").unwrap();
             assert_eq!(val, Some("yes".to_string()));
         }
     }
@@ -634,7 +600,9 @@ mod tests {
         let dir = temp_dir();
         let mut reg = VirtualRegistry::new(dir.path());
 
-        let deleted = reg.delete_value("HKLM", "Software\\Test", "Missing").unwrap();
+        let deleted = reg
+            .delete_value("HKLM", "Software\\Test", "Missing")
+            .unwrap();
         assert!(!deleted);
     }
 
@@ -733,7 +701,8 @@ mod tests {
         let dir = temp_dir();
         let mut reg = VirtualRegistry::new(dir.path());
 
-        reg.set_value("HKLM", "Software\\Test", "Empty", "").unwrap();
+        reg.set_value("HKLM", "Software\\Test", "Empty", "")
+            .unwrap();
 
         let val = reg.get_value("HKLM", "Software\\Test", "Empty").unwrap();
         assert_eq!(val, Some("".to_string()));
@@ -796,8 +765,7 @@ TestKey = "TestValue"
     #[test]
     fn corrupted_toml_file_returns_empty() {
         let dir = temp_dir();
-        fs::write(dir.path().join(REGISTRY_FILENAME), "{{{{not valid toml")
-            .unwrap();
+        fs::write(dir.path().join(REGISTRY_FILENAME), "{{{{not valid toml").unwrap();
 
         let reg = VirtualRegistry::new(dir.path());
         assert_eq!(reg.hive_count(), 0);

@@ -171,8 +171,7 @@ pub fn read_pids_from_file(path: &Path) -> Result<Vec<i32>> {
         return Ok(Vec::new());
     }
 
-    let content = fs::read_to_string(path)
-        .map_err(|source| OpenNtxError::io(path, source))?;
+    let content = fs::read_to_string(path).map_err(|source| OpenNtxError::io(path, source))?;
 
     let mut pids = Vec::new();
     for line in content.lines() {
@@ -305,19 +304,13 @@ mod tests {
     #[test]
     fn default_reaper_has_correct_root() {
         let reaper = ReaperEngine::new();
-        assert_eq!(
-            reaper.cgroup_root(),
-            Path::new("/sys/fs/cgroup/openntx")
-        );
+        assert_eq!(reaper.cgroup_root(), Path::new("/sys/fs/cgroup/openntx"));
     }
 
     #[test]
     fn default_trait_works() {
         let reaper = ReaperEngine::default();
-        assert_eq!(
-            reaper.cgroup_root(),
-            Path::new("/sys/fs/cgroup/openntx")
-        );
+        assert_eq!(reaper.cgroup_root(), Path::new("/sys/fs/cgroup/openntx"));
     }
 
     // ── reap_application tests ───────────────────────────────────────────

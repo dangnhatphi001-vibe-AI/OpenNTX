@@ -55,30 +55,40 @@ pub fn draw(f: &mut Frame, app: &AppState) {
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(Color::DarkGray));
-    
+
     let header_inner = header_block.inner(chunks[0]);
     f.render_widget(header_block, chunks[0]);
 
     let header_split = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(50),
-            Constraint::Percentage(50),
-        ])
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(header_inner);
 
     // Left header content: Logo & Version
     let logo_spans = vec![
-        Span::styled(" ❖ OpenNTX ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            " ❖ OpenNTX ",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        ),
         Span::styled("v1.1.0", Style::default().fg(Color::White)),
-        Span::styled("  [System Admin Control Center]", Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            "  [System Admin Control Center]",
+            Style::default().fg(Color::DarkGray),
+        ),
     ];
     f.render_widget(Paragraph::new(Line::from(logo_spans)), header_split[0]);
 
     // Right header content: System status & Spinner
     let mut status_spans = vec![
         Span::styled("System Status: ", Style::default().fg(Color::DarkGray)),
-        Span::styled("ACTIVE", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "ACTIVE",
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        ),
     ];
     if app.is_loading {
         status_spans.push(Span::styled(
@@ -117,8 +127,18 @@ pub fn draw(f: &mut Frame, app: &AppState) {
         .map(|(i, name)| {
             if Some(i) == active_sidebar_idx {
                 ListItem::new(Line::from(vec![
-                    Span::styled(" ❯ ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-                    Span::styled(*name, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        " ❯ ",
+                        Style::default()
+                            .fg(Color::Cyan)
+                            .add_modifier(Modifier::BOLD),
+                    ),
+                    Span::styled(
+                        *name,
+                        Style::default()
+                            .fg(Color::White)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                 ]))
                 .style(Style::default().bg(Color::Rgb(15, 30, 45)))
             } else {
@@ -185,7 +205,9 @@ pub fn draw(f: &mut Frame, app: &AppState) {
         vec![
             Span::styled(
                 "⚠ ",
-                Style::default().fg(blink_color).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(blink_color)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 "[KERNEL] ",
@@ -199,34 +221,67 @@ pub fn draw(f: &mut Frame, app: &AppState) {
             ),
             Span::styled(
                 capture_status,
-                Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::White)
+                    .add_modifier(Modifier::BOLD),
             ),
         ]
     } else {
         match &app.feedback {
             Feedback::None => vec![
-                Span::styled("[↑↓] ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    "[↑↓] ",
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD),
+                ),
                 Span::styled("Điều hướng", Style::default().fg(Color::White)),
                 Span::styled("  |  ", Style::default().fg(Color::DarkGray)),
-                Span::styled("[Enter] ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    "[Enter] ",
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD),
+                ),
                 Span::styled("Chọn", Style::default().fg(Color::White)),
                 Span::styled("  |  ", Style::default().fg(Color::DarkGray)),
-                Span::styled("[Esc/Backspace] ", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    "[Esc/Backspace] ",
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
+                ),
                 Span::styled("Quay lại", Style::default().fg(Color::White)),
                 Span::styled("  |  ", Style::default().fg(Color::DarkGray)),
-                Span::styled("[q] ", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    "[q] ",
+                    Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                ),
                 Span::styled("Thoát", Style::default().fg(Color::White)),
             ],
             Feedback::Info(msg) => vec![
-                Span::styled("ℹ ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    "ℹ ",
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD),
+                ),
                 Span::styled(msg, Style::default().fg(Color::Cyan)),
             ],
             Feedback::Success(msg) => vec![
-                Span::styled("✔ ", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    "✔ ",
+                    Style::default()
+                        .fg(Color::Green)
+                        .add_modifier(Modifier::BOLD),
+                ),
                 Span::styled(msg, Style::default().fg(Color::Green)),
             ],
             Feedback::Error(msg) => vec![
-                Span::styled("✘ ", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    "✘ ",
+                    Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                ),
                 Span::styled(msg, Style::default().fg(Color::Red)),
             ],
         }
@@ -243,37 +298,59 @@ pub fn draw(f: &mut Frame, app: &AppState) {
 pub fn draw_library(f: &mut Frame, area: ratatui::layout::Rect, app: &AppState) {
     let header_cells = ["App Name", "App ID", "Version", "Architecture"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)));
+        .map(|h| {
+            Cell::from(*h).style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            )
+        });
     let header = Row::new(header_cells).height(1).bottom_margin(1);
 
-    let rows: Vec<Row> = app.profiles.iter().enumerate().map(|(i, p)| {
-        let arch_color = match p.metadata.arch {
-            openntx_core::profile::Arch::X86_64 => Color::Green,
-            _ => Color::Yellow, // X86 hoặc Unknown
-        };
-        
-        let row = Row::new(vec![
-            Cell::from(p.metadata.name.clone()),
-            Cell::from(p.app_id.clone()).style(Style::default().fg(Color::Cyan)),
-            Cell::from(p.metadata.version.clone()),
-            Cell::from(format!("{:?}", p.metadata.arch)).style(Style::default().fg(arch_color)),
-        ]);
+    let rows: Vec<Row> = app
+        .profiles
+        .iter()
+        .enumerate()
+        .map(|(i, p)| {
+            let arch_color = match p.metadata.arch {
+                openntx_core::profile::Arch::X86_64 => Color::Green,
+                _ => Color::Yellow, // X86 hoặc Unknown
+            };
 
-        if i == app.selected_profile_index {
-            row.style(Style::default().bg(Color::Blue).add_modifier(Modifier::BOLD))
-        } else {
-            row
-        }
-    }).collect();
+            let row = Row::new(vec![
+                Cell::from(p.metadata.name.clone()),
+                Cell::from(p.app_id.clone()).style(Style::default().fg(Color::Cyan)),
+                Cell::from(p.metadata.version.clone()),
+                Cell::from(format!("{:?}", p.metadata.arch)).style(Style::default().fg(arch_color)),
+            ]);
 
-    let table = Table::new(rows, [
-        Constraint::Percentage(30),
-        Constraint::Percentage(30),
-        Constraint::Percentage(20),
-        Constraint::Percentage(20),
-    ])
+            if i == app.selected_profile_index {
+                row.style(
+                    Style::default()
+                        .bg(Color::Blue)
+                        .add_modifier(Modifier::BOLD),
+                )
+            } else {
+                row
+            }
+        })
+        .collect();
+
+    let table = Table::new(
+        rows,
+        [
+            Constraint::Percentage(30),
+            Constraint::Percentage(30),
+            Constraint::Percentage(20),
+            Constraint::Percentage(20),
+        ],
+    )
     .header(header)
-    .block(Block::default().borders(Borders::ALL).title(" Local Profile Database "));
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(" Local Profile Database "),
+    );
 
     f.render_widget(table, area);
 }
@@ -286,10 +363,12 @@ fn draw_library_table(f: &mut Frame, area: Rect, app: &AppState) {
         .title(" App Registry Library ");
 
     if app.library_apps.is_empty() {
-        let p = Paragraph::new("\n\nNo registered apps found.\nUse the Analyzer or register an app first.")
-            .alignment(Alignment::Center)
-            .style(Style::default().fg(Color::Yellow))
-            .block(block);
+        let p = Paragraph::new(
+            "\n\nNo registered apps found.\nUse the Analyzer or register an app first.",
+        )
+        .alignment(Alignment::Center)
+        .style(Style::default().fg(Color::Yellow))
+        .block(block);
         f.render_widget(p, area);
         return;
     }
@@ -312,7 +391,7 @@ fn draw_library_table(f: &mut Frame, area: Rect, app: &AppState) {
         let name_cell = Cell::from(format!("{}{}", prefix, app_item.name));
         let id_cell = Cell::from(app_item.app_id.clone());
         let size_cell = Cell::from(size_str);
-        
+
         let status_style = match app_item.status.as_str() {
             s if s.contains("error") => Style::default().fg(Color::Red),
             s if s.contains("registered") => Style::default().fg(Color::Green),
@@ -330,17 +409,31 @@ fn draw_library_table(f: &mut Frame, area: Rect, app: &AppState) {
         Constraint::Percentage(25),
     ];
 
-    let table = Table::new(rows, widths)
-        .block(block)
-        .header(
-            Row::new(vec![
-                Cell::from("Name").style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-                Cell::from("App ID").style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-                Cell::from("Size").style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-                Cell::from("Status").style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-            ])
-            .bottom_margin(1),
-        );
+    let table = Table::new(rows, widths).block(block).header(
+        Row::new(vec![
+            Cell::from("Name").style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Cell::from("App ID").style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Cell::from("Size").style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Cell::from("Status").style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ])
+        .bottom_margin(1),
+    );
 
     f.render_widget(table, area);
 }
@@ -366,7 +459,11 @@ fn draw_analyzer_zone(f: &mut Frame, area: Rect, _app: &AppState) {
 
     let banner = Paragraph::new("📥 Drop file or Enter path here")
         .alignment(Alignment::Center)
-        .style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD));
+        .style(
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        );
 
     f.render_widget(banner, vertical_split[1]);
 }
@@ -419,7 +516,12 @@ fn draw_app_details(f: &mut Frame, area: Rect, app: &AppState) {
     if let Some(m) = &app.manifest {
         lines.push(Line::from(vec![
             Span::styled("App ID:          ", Style::default().fg(Color::DarkGray)),
-            Span::styled(&m.app_id, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                &m.app_id,
+                Style::default()
+                    .fg(Color::White)
+                    .add_modifier(Modifier::BOLD),
+            ),
         ]));
         lines.push(Line::from(vec![
             Span::styled("Name:            ", Style::default().fg(Color::DarkGray)),
@@ -440,18 +542,34 @@ fn draw_app_details(f: &mut Frame, area: Rect, app: &AppState) {
         lines.push(Line::from(vec![
             Span::styled("Desktop Launcher:", Style::default().fg(Color::DarkGray)),
             Span::styled(
-                if app.desktop_exists { "✓ Present" } else { "✗ Missing" },
-                if app.desktop_exists { Style::default().fg(Color::Green) } else { Style::default().fg(Color::Yellow) },
+                if app.desktop_exists {
+                    "✓ Present"
+                } else {
+                    "✗ Missing"
+                },
+                if app.desktop_exists {
+                    Style::default().fg(Color::Green)
+                } else {
+                    Style::default().fg(Color::Yellow)
+                },
             ),
         ]));
         lines.push(Line::from(""));
         lines.push(Line::from(Span::styled(
             "Actions Available on Selected App:",
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         )));
-        lines.push(Line::from("  [R] Run plan          [C] Create launcher   [X] Remove launcher"));
-        lines.push(Line::from("  [1] Snapshot before   [2] Snapshot after    [3] Diff"));
-        lines.push(Line::from("  [4] Report            [5] Status            [P] Build Package"));
+        lines.push(Line::from(
+            "  [R] Run plan          [C] Create launcher   [X] Remove launcher",
+        ));
+        lines.push(Line::from(
+            "  [1] Snapshot before   [2] Snapshot after    [3] Diff",
+        ));
+        lines.push(Line::from(
+            "  [4] Report            [5] Status            [P] Build Package",
+        ));
         lines.push(Line::from("  [L] Show Logs         [G] Run Doctor"));
     } else {
         lines.push(Line::from("No manifest metadata loaded."));
@@ -494,7 +612,10 @@ fn draw_capture_actions(f: &mut Frame, area: Rect, app: &AppState) {
                 Style::default().fg(Color::White)
             };
             let prefix = if is_selected { "▶ " } else { "  " };
-            ListItem::new(Line::from(Span::styled(format!("{}{}", prefix, name), style)))
+            ListItem::new(Line::from(Span::styled(
+                format!("{}{}", prefix, name),
+                style,
+            )))
         })
         .collect();
 
@@ -536,7 +657,10 @@ fn draw_logs_list(f: &mut Frame, area: Rect, app: &AppState) {
             };
             let prefix = if is_selected { "▶ " } else { "  " };
             ListItem::new(Line::from(Span::styled(
-                format!("{} [{}] {} | {} (Status: {})", prefix, log.timestamp, log.app_id, log.app_name, log.status),
+                format!(
+                    "{} [{}] {} | {} (Status: {})",
+                    prefix, log.timestamp, log.app_id, log.app_name, log.status
+                ),
                 style,
             )))
         })
@@ -599,7 +723,8 @@ fn draw_json_viewer(f: &mut Frame, area: Rect, app: &AppState) {
 
     match json {
         Some(v) => {
-            let text = serde_json::to_string_pretty(v).unwrap_or_else(|_| "Serialization error".to_string());
+            let text = serde_json::to_string_pretty(v)
+                .unwrap_or_else(|_| "Serialization error".to_string());
             f.render_widget(Paragraph::new(text).wrap(Wrap { trim: false }), inner);
         }
         None => {
@@ -636,7 +761,7 @@ fn draw_settings_page(f: &mut Frame, area: Rect, _app: &AppState) {
          Core Version: {}\n\
          \n\
          Sandbox constraints and run plans are ready to deploy.",
-         crate::app::VERSION
+        crate::app::VERSION
     );
 
     f.render_widget(Paragraph::new(text), inner);

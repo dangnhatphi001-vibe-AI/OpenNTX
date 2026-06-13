@@ -25,3 +25,5 @@ dirs = "5"
 inotify = "0.10"
 libc = "0.2"
 toml = "0.8"
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }

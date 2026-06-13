@@ -368,7 +368,12 @@ mod tests {
     fn create_surface_id_starts_above_base() {
         let mut mgr = temp_mgr();
         let id = mgr.create_headless_surface("test", 100, 100).unwrap();
-        assert!(id >= HWND_BASE, "surface ID {} < HWND_BASE {}", id, HWND_BASE);
+        assert!(
+            id >= HWND_BASE,
+            "surface ID {} < HWND_BASE {}",
+            id,
+            HWND_BASE
+        );
     }
 
     #[test]
@@ -427,8 +432,16 @@ mod tests {
         let info = mgr.get_surface(id).unwrap();
         let fb_path = info.framebuffer_path.as_ref().unwrap();
         let path_str = fb_path.display().to_string();
-        assert!(path_str.contains("my-app"), "path should contain app_id: {}", path_str);
-        assert!(path_str.ends_with(".rgba"), "path should end with .rgba: {}", path_str);
+        assert!(
+            path_str.contains("my-app"),
+            "path should contain app_id: {}",
+            path_str
+        );
+        assert!(
+            path_str.ends_with(".rgba"),
+            "path should end with .rgba: {}",
+            path_str
+        );
     }
 
     // ── GDI flush ────────────────────────────────────────────────────────
@@ -483,9 +496,9 @@ mod tests {
 
         // Create a pattern: each pixel is [R, G, B, A].
         let mut pixels = Vec::with_capacity(2 * 2 * 4);
-        pixels.extend_from_slice(&[255, 0, 0, 255]);   // red
-        pixels.extend_from_slice(&[0, 255, 0, 255]);   // green
-        pixels.extend_from_slice(&[0, 0, 255, 255]);   // blue
+        pixels.extend_from_slice(&[255, 0, 0, 255]); // red
+        pixels.extend_from_slice(&[0, 255, 0, 255]); // green
+        pixels.extend_from_slice(&[0, 0, 255, 255]); // blue
         pixels.extend_from_slice(&[255, 255, 255, 0]); // transparent white
 
         mgr.map_gdi_flush(id, &pixels).unwrap();
@@ -493,10 +506,10 @@ mod tests {
         let info = mgr.get_surface(id).unwrap();
         let written = fs::read(info.framebuffer_path.as_ref().unwrap()).unwrap();
         assert_eq!(written[0], 255); // R
-        assert_eq!(written[1], 0);   // G
-        assert_eq!(written[2], 0);   // B
+        assert_eq!(written[1], 0); // G
+        assert_eq!(written[2], 0); // B
         assert_eq!(written[3], 255); // A
-        assert_eq!(written[4], 0);   // R
+        assert_eq!(written[4], 0); // R
         assert_eq!(written[5], 255); // G
     }
 
@@ -506,7 +519,12 @@ mod tests {
     fn destroy_surface_removes_file() {
         let mut mgr = temp_mgr();
         let id = mgr.create_headless_surface("test", 16, 16).unwrap();
-        let fb_path = mgr.get_surface(id).unwrap().framebuffer_path.clone().unwrap();
+        let fb_path = mgr
+            .get_surface(id)
+            .unwrap()
+            .framebuffer_path
+            .clone()
+            .unwrap();
         assert!(fb_path.exists());
 
         mgr.destroy_surface(id).unwrap();

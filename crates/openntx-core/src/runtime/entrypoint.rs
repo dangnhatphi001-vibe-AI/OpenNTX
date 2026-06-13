@@ -216,12 +216,13 @@ impl RuntimeEntrypoint {
     ) -> Result<()> {
         // 1. Prepare the sandbox directory (Wine prefix).
         let app_sandbox = self.sandbox_root.join(app_id);
-        fs::create_dir_all(&app_sandbox)
-            .map_err(|source| OpenNtxError::WinePrefix(format!(
+        fs::create_dir_all(&app_sandbox).map_err(|source| {
+            OpenNtxError::WinePrefix(format!(
                 "failed to create sandbox {}: {}",
                 app_sandbox.display(),
                 source
-            )))?;
+            ))
+        })?;
 
         // 2. Create a capture subdirectory for tracking artifacts.
         let capture_dir = app_sandbox.join(CAPTURE_SUBDIR);
@@ -271,12 +272,7 @@ impl RuntimeEntrypoint {
         exec_result?;
 
         // 8. Build a CompatProfile from the captured data.
-        let profile = build_profile_from_capture(
-            app_id,
-            filename,
-            &captured_paths,
-            &app_sandbox,
-        );
+        let profile = build_profile_from_capture(app_id, filename, &captured_paths, &app_sandbox);
 
         // 9. Persist the profile.
         self.profile_manager.save_profile(&profile)?;
@@ -338,10 +334,7 @@ fn build_profile_from_capture(
 /// For each captured file path, its parent directory (relative to the sandbox
 /// root, converted to a Windows-style `C:\...` path) is recorded.  Duplicate
 /// and ancestor-only entries are collapsed.
-fn extract_required_paths(
-    captured_paths: &HashSet<PathBuf>,
-    sandbox_root: &Path,
-) -> Vec<String> {
+fn extract_required_paths(captured_paths: &HashSet<PathBuf>, sandbox_root: &Path) -> Vec<String> {
     let mut dirs: HashSet<String> = HashSet::new();
 
     for path in captured_paths {
@@ -354,7 +347,8 @@ fn extract_required_paths(
             }
             if let Some(parent) = path.parent() {
                 if let Ok(parent_rel) = parent.strip_prefix(sandbox_root) {
-                    let win_path = format!("C:\\{}", parent_rel.to_string_lossy().replace('/', "\\"));
+                    let win_path =
+                        format!("C:\\{}", parent_rel.to_string_lossy().replace('/', "\\"));
                     // Skip the bare drive_c root.
                     if win_path != "C:\\" {
                         dirs.insert(win_path);
@@ -377,7 +371,10 @@ fn hash_pe_file(path: &Path) -> Result<String> {
     let mut hasher = Sha256::new();
     hasher.update(&bytes);
     let digest = hasher.finalize();
-    Ok(digest.iter().map(|b| format!("{:02x}", b)).collect::<String>())
+    Ok(digest
+        .iter()
+        .map(|b| format!("{:02x}", b))
+        .collect::<String>())
 }
 
 /// Check whether a file starts with the PE "MZ" magic bytes.
@@ -430,10 +427,7 @@ mod tests {
 
     #[test]
     fn parse_kernel_args_no_app_args() {
-        let args = vec![
-            "openntx-runtime".into(),
-            "/tmp/test.exe".into(),
-        ];
+        let args = vec!["openntx-runtime".into(), "/tmp/test.exe".into()];
         let (exe, app_args) = RuntimeEntrypoint::parse_kernel_args(args).unwrap();
         assert_eq!(exe, PathBuf::from("/tmp/test.exe"));
         assert!(app_args.is_empty());
@@ -486,8 +480,7 @@ mod tests {
         let profile_mgr_exec = ProfileManager::with_path(profiles).unwrap();
         let sandbox = dir.path().join("sandbox");
         let executor =
-            OpenNTXExecutor::with_paths(profile_mgr_exec, dir.path().join("exec-sandbox"))
-                .unwrap();
+            OpenNTXExecutor::with_paths(profile_mgr_exec, dir.path().join("exec-sandbox")).unwrap();
         let ep = RuntimeEntrypoint::with_paths(profile_mgr_ep, executor, sandbox).unwrap();
 
         let result = ep.dispatch_execution(Path::new("/nonexistent/app.exe"), &[]);
@@ -507,8 +500,7 @@ mod tests {
         let profile_mgr_exec = ProfileManager::with_path(profiles).unwrap();
         let sandbox = dir.path().join("sandbox");
         let executor =
-            OpenNTXExecutor::with_paths(profile_mgr_exec, dir.path().join("exec-sandbox"))
-                .unwrap();
+            OpenNTXExecutor::with_paths(profile_mgr_exec, dir.path().join("exec-sandbox")).unwrap();
         let ep = RuntimeEntrypoint::with_paths(profile_mgr_ep, executor, sandbox).unwrap();
 
         let result = ep.dispatch_execution(&txt, &[]);
@@ -569,7 +561,11 @@ mod tests {
         assert!(result.is_err());
         match result.unwrap_err() {
             OpenNtxError::RuntimeExecution(msg) => {
-                assert!(msg.contains("wine64") || msg.contains("wine"), "msg: {}", msg);
+                assert!(
+                    msg.contains("wine64") || msg.contains("wine"),
+                    "msg: {}",
+                    msg
+                );
             }
             other => panic!("expected RuntimeExecution, got: {:?}", other),
         }
@@ -586,8 +582,8 @@ mod tests {
         let sandbox_root = dir.path().join("sandbox");
         let exec_sandbox = dir.path().join("exec-sandbox");
         let executor = OpenNTXExecutor::with_paths(profile_mgr_exec, exec_sandbox).unwrap();
-        let ep = RuntimeEntrypoint::with_paths(profile_mgr_ep, executor, sandbox_root.clone())
-            .unwrap();
+        let ep =
+            RuntimeEntrypoint::with_paths(profile_mgr_ep, executor, sandbox_root.clone()).unwrap();
 
         // Verify no profile exists yet.
         let pe_hash = hash_pe_file(&pe_path).unwrap();
@@ -644,8 +640,17 @@ mod tests {
         assert_eq!(profile.app_id, "test-1234");
         assert_eq!(profile.metadata.name, "TestApp");
         assert_eq!(profile.metadata.arch, Arch::X86_64);
-        assert!(profile.fs_rules.required_paths.contains(&"C:\\drive_c\\Program Files\\TestApp".to_string())
-            || profile.fs_rules.required_paths.iter().any(|p| p.contains("Program Files")));
+        assert!(
+            profile
+                .fs_rules
+                .required_paths
+                .contains(&"C:\\drive_c\\Program Files\\TestApp".to_string())
+                || profile
+                    .fs_rules
+                    .required_paths
+                    .iter()
+                    .any(|p| p.contains("Program Files"))
+        );
     }
 
     #[test]

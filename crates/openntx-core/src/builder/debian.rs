@@ -123,19 +123,16 @@ impl DebBuilder {
 
         // Clean slate — remove stale workspace if present.
         if wspace.exists() {
-            fs::remove_dir_all(&wspace)
-                .map_err(|source| OpenNtxError::io(&wspace, source))?;
+            fs::remove_dir_all(&wspace).map_err(|source| OpenNtxError::io(&wspace, source))?;
         }
 
         // DEBIAN/
         let debian_dir = wspace.join("DEBIAN");
-        fs::create_dir_all(&debian_dir)
-            .map_err(|source| OpenNtxError::io(&debian_dir, source))?;
+        fs::create_dir_all(&debian_dir).map_err(|source| OpenNtxError::io(&debian_dir, source))?;
 
         // opt/openntx/apps/<app_id>/drive_c/
         let app_dir = wspace.join("opt/openntx/apps").join(app_id).join("drive_c");
-        fs::create_dir_all(&app_dir)
-            .map_err(|source| OpenNtxError::io(&app_dir, source))?;
+        fs::create_dir_all(&app_dir).map_err(|source| OpenNtxError::io(&app_dir, source))?;
 
         // usr/share/applications/
         let desktop_dir = wspace.join("usr/share/applications");
@@ -397,9 +394,7 @@ mod tests {
         let wspace = builder.prepare_workspace().expect("prepare_workspace");
 
         assert!(wspace.join("DEBIAN").is_dir());
-        assert!(wspace
-            .join("opt/openntx/apps/ws-test/drive_c")
-            .is_dir());
+        assert!(wspace.join("opt/openntx/apps/ws-test/drive_c").is_dir());
         assert!(wspace.join("usr/share/applications").is_dir());
 
         // Clean up
@@ -428,8 +423,7 @@ mod tests {
             .generate_control_file(&wspace)
             .expect("generate_control_file");
 
-        let content =
-            fs::read_to_string(wspace.join("DEBIAN/control")).expect("read control");
+        let content = fs::read_to_string(wspace.join("DEBIAN/control")).expect("read control");
 
         assert!(content.contains("Package: openntx-ctrl-test"));
         assert!(content.contains("Version: 2.1.0"));
@@ -453,8 +447,7 @@ mod tests {
             .generate_control_file(&wspace)
             .expect("generate_control_file");
 
-        let content =
-            fs::read_to_string(wspace.join("DEBIAN/control")).expect("read control");
+        let content = fs::read_to_string(wspace.join("DEBIAN/control")).expect("read control");
 
         assert!(content.contains("Architecture: i386"));
 
@@ -544,7 +537,10 @@ mod tests {
         let profile = sample_profile("out-dir-test");
         let builder = DebBuilder::new(profile).with_output_dir("/tmp/openntx-test-output");
 
-        assert_eq!(builder.output_dir, PathBuf::from("/tmp/openntx-test-output"));
+        assert_eq!(
+            builder.output_dir,
+            PathBuf::from("/tmp/openntx-test-output")
+        );
     }
 
     #[test]

@@ -155,10 +155,7 @@ mod tests {
     #[test]
     fn arch_serde() {
         assert_eq!(serde_json::to_string(&Arch::X86).unwrap(), "\"x86\"");
-        assert_eq!(
-            serde_json::to_string(&Arch::X86_64).unwrap(),
-            "\"x86_64\""
-        );
+        assert_eq!(serde_json::to_string(&Arch::X86_64).unwrap(), "\"x86_64\"");
         assert_eq!(serde_json::from_str::<Arch>("\"x86\"").unwrap(), Arch::X86);
         assert_eq!(
             serde_json::from_str::<Arch>("\"x86_64\"").unwrap(),

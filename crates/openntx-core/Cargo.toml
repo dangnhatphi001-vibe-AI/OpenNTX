@@ -19,7 +19,11 @@ dirs.workspace = true
 inotify.workspace = true
 libc.workspace = true
 toml.workspace = true
+axum.workspace = true
+tokio.workspace = true
 anyhow = "1.0.102"
 
 [dev-dependencies]
 tempfile = "3"
+tower = { version = "0.4", features = ["util"] }
+http-body-util = "0.1"

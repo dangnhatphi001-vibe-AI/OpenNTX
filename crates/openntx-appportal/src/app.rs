@@ -728,10 +728,8 @@ impl AppState {
                 // Auto-clear after a few ticks.
                 self.feedback_ttl = 20;
             } else {
-                self.live_capture_status = Some(format!(
-                    "{}: {} — {} files tracked",
-                    status, app_id, files
-                ));
+                self.live_capture_status =
+                    Some(format!("{}: {} — {} files tracked", status, app_id, files));
             }
         } else {
             // Fallback: store raw string.

@@ -249,10 +249,7 @@ mod tests {
     fn cgroup_path_for_app() {
         let gov = ResourceGovernor::with_root(PathBuf::from("/sys/fs/cgroup/openntx"));
         let path = gov.cgroup_path("notepadpp-v8.6");
-        assert_eq!(
-            path,
-            PathBuf::from("/sys/fs/cgroup/openntx/notepadpp-v8.6")
-        );
+        assert_eq!(path, PathBuf::from("/sys/fs/cgroup/openntx/notepadpp-v8.6"));
     }
 
     #[test]
@@ -316,8 +313,7 @@ mod tests {
         assert!(dir.path().join("test-app").exists());
 
         // memory.max should have been written.
-        let memory_content =
-            fs::read_to_string(dir.path().join("test-app/memory.max")).unwrap();
+        let memory_content = fs::read_to_string(dir.path().join("test-app/memory.max")).unwrap();
         assert_eq!(memory_content, "4294967296");
 
         // cpu.max should have been written.
@@ -354,8 +350,7 @@ mod tests {
         let _ = gov.apply_limits(0, "test-app", 4_294_967_296, "max");
 
         // memory.max should have been written.
-        let memory_content =
-            fs::read_to_string(dir.path().join("test-app/memory.max")).unwrap();
+        let memory_content = fs::read_to_string(dir.path().join("test-app/memory.max")).unwrap();
         assert_eq!(memory_content, "4294967296");
 
         // cpu.max should NOT have been written.
@@ -409,8 +404,7 @@ mod tests {
 
         let _ = gov.apply_limits(0, "mem-only", 2_147_483_648, "max");
 
-        let memory_content =
-            fs::read_to_string(dir.path().join("mem-only/memory.max")).unwrap();
+        let memory_content = fs::read_to_string(dir.path().join("mem-only/memory.max")).unwrap();
         assert_eq!(memory_content, "2147483648");
         assert!(!dir.path().join("mem-only/cpu.max").exists());
     }
@@ -423,8 +417,7 @@ mod tests {
         let _ = gov.apply_limits(0, "cpu-only", 0, "25000 100000");
 
         assert!(!dir.path().join("cpu-only/memory.max").exists());
-        let cpu_content =
-            fs::read_to_string(dir.path().join("cpu-only/cpu.max")).unwrap();
+        let cpu_content = fs::read_to_string(dir.path().join("cpu-only/cpu.max")).unwrap();
         assert_eq!(cpu_content, "25000 100000");
     }
 }

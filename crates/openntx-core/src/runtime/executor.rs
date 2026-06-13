@@ -79,7 +79,7 @@ impl SecurityConfig {
     pub fn hardened() -> Self {
         Self {
             namespaces: NamespaceConfig {
-                new_pid: false,   // PID ns requires wrapper binary
+                new_pid: false, // PID ns requires wrapper binary
                 new_net: true,
                 new_mount: true,
             },
@@ -356,11 +356,7 @@ impl OpenNTXExecutor {
     ///
     /// If a profile exists, required paths are created inside the prefix.
     /// Environment variables for `drive_c` and registry overrides are set.
-    fn prepare_sandbox(
-        &self,
-        app_id: &str,
-        profile: &Option<CompatProfile>,
-    ) -> Result<PathBuf> {
+    fn prepare_sandbox(&self, app_id: &str, profile: &Option<CompatProfile>) -> Result<PathBuf> {
         let prefix_path = self.sandbox_root.join(app_id);
         if !prefix_path.exists() {
             fs::create_dir_all(&prefix_path).map_err(|source| {
@@ -422,10 +418,7 @@ fn select_wine_binary(profile: &Option<CompatProfile>) -> &'static str {
 /// Build the environment variables needed for an isolated Wine execution.
 fn build_wine_environment(prefix_path: &Path) -> HashMap<String, String> {
     let mut env = HashMap::new();
-    env.insert(
-        "WINEPREFIX".to_string(),
-        prefix_path.display().to_string(),
-    );
+    env.insert("WINEPREFIX".to_string(), prefix_path.display().to_string());
     env.insert("WINEDEBUG".to_string(), "-all".to_string());
     env.insert("WINEESYNC".to_string(), "1".to_string());
     env.insert(
@@ -645,11 +638,7 @@ mod tests {
         let prefix = executor.prepare_sandbox(app_id, &profile).unwrap();
 
         assert!(prefix.join("drive_c/Program Files/TestApp").exists());
-        assert!(
-            prefix
-                .join("drive_c/Users/Public/AppData/Test")
-                .exists()
-        );
+        assert!(prefix.join("drive_c/Users/Public/AppData/Test").exists());
     }
 
     // ── Args passthrough ─────────────────────────────────────────────────
@@ -789,8 +778,7 @@ mod tests {
         let sandbox = dir.path().join("sandbox");
         let cgroup_root = dir.path().join("cgroups");
         let gov = ResourceGovernor::with_root(cgroup_root);
-        let executor =
-            OpenNTXExecutor::with_paths_and_governor(profile_mgr, sandbox, gov).unwrap();
+        let executor = OpenNTXExecutor::with_paths_and_governor(profile_mgr, sandbox, gov).unwrap();
 
         // Verify the governor is accessible.
         assert_eq!(

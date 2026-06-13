@@ -40,7 +40,12 @@ use std::panic;
 
 fn restore_terminal() {
     let _ = disable_raw_mode();
-    let _ = execute!(io::stdout(), LeaveAlternateScreen, DisableMouseCapture, Show);
+    let _ = execute!(
+        io::stdout(),
+        LeaveAlternateScreen,
+        DisableMouseCapture,
+        Show
+    );
 }
 
 /// RAII guard that restores the terminal on drop (normal exit **or** panic).
@@ -468,5 +473,3 @@ fn handle_package_key(app: &mut AppState, registry: &AppRegistry, tx: &EventSend
         _ => {}
     }
 }
-
-

@@ -1,3 +1,4 @@
+pub mod api;
 pub mod backend;
 pub mod binfmt;
 pub mod cgroups;
@@ -10,6 +11,8 @@ pub mod reaper;
 pub mod registry;
 pub mod run_plan;
 
+pub use self::api::ApiBridgeServer;
+pub use self::registry::VirtualRegistry;
 pub use backend::{RuntimeBackend, RuntimeExecutionPlan};
 pub use binfmt::BinfmtManager;
 pub use cgroups::ResourceGovernor;
@@ -19,5 +22,4 @@ pub use graphics::WindowStubManager;
 pub use ipc::{CaptureStatusMessage, RuntimeIpcClient, RuntimeIpcServer};
 pub use placeholder::{ExternalCompatibilityBackend, FutureNativeBackend, NotImplementedBackend};
 pub use reaper::ReaperEngine;
-pub use self::registry::VirtualRegistry;
 pub use run_plan::{create_registered_run_plan, RunPlanOptions, RunPlanReport};

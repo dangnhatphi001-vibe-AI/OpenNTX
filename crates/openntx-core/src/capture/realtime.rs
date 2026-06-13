@@ -153,8 +153,7 @@ impl CaptureSession {
 /// - `tx.send()` fails (receiver dropped), or
 /// - an unrecoverable I/O error occurs.
 fn tracking_loop(target_dir: &Path, tx: &mpsc::Sender<CaptureEvent>) -> Result<()> {
-    let mut inotify =
-        Inotify::init().map_err(|source| OpenNtxError::io(target_dir, source))?;
+    let mut inotify = Inotify::init().map_err(|source| OpenNtxError::io(target_dir, source))?;
 
     // Set the inotify file descriptor to non-blocking so that read_events()
     // returns immediately with WouldBlock when no events are queued.
@@ -197,7 +196,10 @@ fn tracking_loop(target_dir: &Path, tx: &mpsc::Sender<CaptureEvent>) -> Result<(
 
                     // ── CREATE ───────────────────────────────────────────
                     if event.mask.contains(EventMask::CREATE) {
-                        if tx.send(CaptureEvent::FileCreated(full_path.clone())).is_err() {
+                        if tx
+                            .send(CaptureEvent::FileCreated(full_path.clone()))
+                            .is_err()
+                        {
                             return Ok(()); // receiver dropped
                         }
                         // Automatically watch newly created directories so
@@ -217,7 +219,10 @@ fn tracking_loop(target_dir: &Path, tx: &mpsc::Sender<CaptureEvent>) -> Result<(
 
                     // ── MODIFY ───────────────────────────────────────────
                     if event.mask.contains(EventMask::MODIFY) {
-                        if tx.send(CaptureEvent::FileModified(full_path.clone())).is_err() {
+                        if tx
+                            .send(CaptureEvent::FileModified(full_path.clone()))
+                            .is_err()
+                        {
                             return Ok(());
                         }
                     }
@@ -256,17 +261,11 @@ fn set_nonblocking(fd: std::os::unix::io::RawFd, context: &Path) -> Result<()> {
     // SAFETY: we only call fcntl on a valid fd owned by the Inotify instance.
     let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
     if flags < 0 {
-        return Err(OpenNtxError::io(
-            context,
-            std::io::Error::last_os_error(),
-        ));
+        return Err(OpenNtxError::io(context, std::io::Error::last_os_error()));
     }
     let rc = unsafe { libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK) };
     if rc < 0 {
-        return Err(OpenNtxError::io(
-            context,
-            std::io::Error::last_os_error(),
-        ));
+        return Err(OpenNtxError::io(context, std::io::Error::last_os_error()));
     }
     Ok(())
 }
@@ -290,10 +289,7 @@ fn add_watch_recursive(
         return Ok(());
     }
 
-    let mask = WatchMask::CREATE
-        | WatchMask::MODIFY
-        | WatchMask::DELETE
-        | WatchMask::DONT_FOLLOW;
+    let mask = WatchMask::CREATE | WatchMask::MODIFY | WatchMask::DELETE | WatchMask::DONT_FOLLOW;
 
     let wd = inotify
         .watches()
@@ -376,10 +372,16 @@ mod tests {
         let test_file = tmp.path().join("test.txt");
         fs::write(&test_file, "hello").expect("write test file");
 
-        let found = wait_for(&rx, Duration::from_secs(3), |ev| {
-            matches!(ev, CaptureEvent::FileCreated(p) if p == &test_file)
-        });
-        assert!(found.is_some(), "expected FileCreated for {}", test_file.display());
+        let found = wait_for(
+            &rx,
+            Duration::from_secs(3),
+            |ev| matches!(ev, CaptureEvent::FileCreated(p) if p == &test_file),
+        );
+        assert!(
+            found.is_some(),
+            "expected FileCreated for {}",
+            test_file.display()
+        );
     }
 
     #[test]
@@ -396,10 +398,16 @@ mod tests {
 
         fs::write(&test_file, "v2").expect("modify");
 
-        let found = wait_for(&rx, Duration::from_secs(3), |ev| {
-            matches!(ev, CaptureEvent::FileModified(p) if p == &test_file)
-        });
-        assert!(found.is_some(), "expected FileModified for {}", test_file.display());
+        let found = wait_for(
+            &rx,
+            Duration::from_secs(3),
+            |ev| matches!(ev, CaptureEvent::FileModified(p) if p == &test_file),
+        );
+        assert!(
+            found.is_some(),
+            "expected FileModified for {}",
+            test_file.display()
+        );
     }
 
     #[test]
@@ -416,10 +424,16 @@ mod tests {
 
         fs::remove_file(&test_file).expect("delete");
 
-        let found = wait_for(&rx, Duration::from_secs(3), |ev| {
-            matches!(ev, CaptureEvent::FileDeleted(p) if p == &test_file)
-        });
-        assert!(found.is_some(), "expected FileDeleted for {}", test_file.display());
+        let found = wait_for(
+            &rx,
+            Duration::from_secs(3),
+            |ev| matches!(ev, CaptureEvent::FileDeleted(p) if p == &test_file),
+        );
+        assert!(
+            found.is_some(),
+            "expected FileDeleted for {}",
+            test_file.display()
+        );
     }
 
     #[test]
@@ -450,9 +464,11 @@ mod tests {
         let file_in_sub = sub.join("inner.txt");
         fs::write(&file_in_sub, "data").expect("write in subdir");
 
-        let found = wait_for(&rx, Duration::from_secs(3), |ev| {
-            matches!(ev, CaptureEvent::FileCreated(p) if p == &file_in_sub)
-        });
+        let found = wait_for(
+            &rx,
+            Duration::from_secs(3),
+            |ev| matches!(ev, CaptureEvent::FileCreated(p) if p == &file_in_sub),
+        );
         assert!(
             found.is_some(),
             "expected FileCreated for file inside new subdirectory"

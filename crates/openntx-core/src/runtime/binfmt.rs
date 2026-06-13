@@ -80,10 +80,7 @@ impl BinfmtManager {
     /// - `MZ` = the DOS/PE magic header
     /// - `OC` = credentials override (C) + open for read (O)
     pub fn build_registration_string(&self) -> String {
-        format!(
-            ":{}:M::MZ::{}:OC",
-            BINFMT_NAME, self.runtime_path
-        )
+        format!(":{}:M::MZ::{}:OC", BINFMT_NAME, self.runtime_path)
     }
 
     /// Register the OpenNTX PE subsystem with binfmt_misc.

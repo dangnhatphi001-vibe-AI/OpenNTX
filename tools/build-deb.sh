@@ -25,7 +25,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 PACKAGE_NAME="openntx"
-VERSION="2.8.0"
+VERSION="3.0.0"
 ARCH="amd64"
 OUTPUT_DIR="${WORKSPACE_ROOT}/target/debian"
 DRY_RUN=false
@@ -228,8 +228,12 @@ prepare_staging() {
     # Create directory skeleton
     mkdir -p "$STAGING_DIR/DEBIAN"
     mkdir -p "$STAGING_DIR/usr/bin"
+    mkdir -p "$STAGING_DIR/usr/lib/systemd/system"
+    mkdir -p "$STAGING_DIR/usr/share/applications"
+    mkdir -p "$STAGING_DIR/usr/share/icons/hicolor/256x256/apps"
     mkdir -p "$STAGING_DIR/etc/openntx"
     mkdir -p "$STAGING_DIR/var/lib/openntx/sandboxes"
+    mkdir -p "$STAGING_DIR/var/log/openntx"
 
     log_info "Staging directory created: $STAGING_DIR"
 }
@@ -267,8 +271,8 @@ Version: ${VERSION}
 Section: misc
 Priority: optional
 Architecture: ${ARCH}
-Depends: libc6 (>= 2.31), libx11-6, libgcc-s1 (>= 3.0), libstdc++6 (>= 11)
-Recommends: wine, xdg-utils
+Depends: libc6 (>= 2.31), libx11-6, libgcc-s1 (>= 3.0), libstdc++6 (>= 11), wine-binfmt | wine, cgroup-tools, systemd
+Recommends: xdg-utils, xdg-desktop-portal
 Installed-Size: 40960
 Maintainer: OpenNTX Team <maintainer@openntx.org>
 Homepage: https://github.com/openntx/openntx
@@ -400,7 +404,14 @@ case "$1" in
         set_permissions
         setup_binfmt
         setup_cgroup_hierarchy
-        log_action "installation complete"
+        # Enable and start systemd service
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl daemon-reload 2>/dev/null || true
+            systemctl enable openntx-core.service 2>/dev/null || true
+            systemctl start openntx-core.service 2>/dev/null || true
+            log_action "openntx-core.service enabled and started"
+        fi
+        log_action "installation complete — OpenNTX v3.0 Consumer Edition ready"
         ;;
     abort-upgrade|abort-remove|abort-deconfigure)
         ;;
@@ -497,15 +508,23 @@ stop_daemons() {
             systemctl stop openntx-core.service 2>/dev/null || true
             log_action "stopped openntx-core.service"
         fi
+        if systemctl is-enabled --quiet openntx-core.service 2>/dev/null; then
+            systemctl disable openntx-core.service 2>/dev/null || true
+            log_action "disabled openntx-core.service"
+        fi
+        systemctl daemon-reload 2>/dev/null || true
     fi
 
     local pids
-    pids=$(pgrep -u "$OPENNTX_USER" -f "openntx-core" 2>/dev/null || true)
+    pids=$(pgrep -u "$OPENNTX_USER" -f "openntx-appportal" 2>/dev/null || true)
+    if [ -z "$pids" ]; then
+        pids=$(pgrep -u "$OPENNTX_USER" -f "openntx-core" 2>/dev/null || true)
+    fi
     if [ -n "$pids" ]; then
         echo "$pids" | xargs kill -TERM 2>/dev/null || true
         sleep 0.5
         echo "$pids" | xargs kill -KILL 2>/dev/null || true
-        log_action "killed residual openntx-core processes"
+        log_action "killed residual openntx processes"
     fi
 }
 
@@ -566,6 +585,78 @@ install_config() {
 
     chmod 644 "$config_dst"
     log_info "Configuration installed."
+}
+
+# ── Generate Systemd Service ─────────────────────────────────────────────────
+
+generate_systemd_service() {
+    log_info "Generating systemd service file"
+
+    local service_file="$STAGING_DIR/usr/lib/systemd/system/openntx-core.service"
+
+    cat > "$service_file" <<'EOF'
+[Unit]
+Description=OpenNTX Windows Application Subsystem — Core Daemon
+Documentation=https://github.com/openntx/openntx
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/openntx-appportal
+Restart=on-failure
+RestartSec=3
+
+# Security hardening
+User=openntx
+Group=openntx
+NoNewPrivileges=false
+ProtectSystem=strict
+ReadWritePaths=/var/lib/openntx /var/log/openntx /tmp
+ProtectHome=read-only
+PrivateTmp=true
+
+# Resource limits
+MemoryMax=2G
+CPUQuota=80%
+
+# Environment
+Environment=RUST_LOG=info
+Environment=OPENNTX_API_ADDR=127.0.0.1:8080
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    chmod 644 "$service_file"
+    log_info "Systemd service file generated."
+}
+
+# ── Generate Desktop Entry ───────────────────────────────────────────────────
+
+generate_desktop_entry() {
+    log_info "Generating desktop entry"
+
+    local desktop_file="$STAGING_DIR/usr/share/applications/openntx.desktop"
+
+    cat > "$desktop_file" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=OpenNTX
+GenericName=Windows Application Subsystem
+Comment=Run Windows applications on Linux with sandboxed isolation
+Exec=/usr/bin/openntx-gui %F
+Icon=openntx
+Terminal=false
+Categories=System;Emulator;
+MimeType=application/x-ms-dos-executable;application/x-ms-shortcut;
+Keywords=windows;exe;wine;sandbox;openntx;
+StartupWMClass=openntx-gui
+StartupNotify=true
+EOF
+
+    chmod 644 "$desktop_file"
+    log_info "Desktop entry generated."
 }
 
 # ── Normalize Permissions ────────────────────────────────────────────────────
@@ -666,6 +757,8 @@ main() {
     generate_postinst
     generate_prerm
     install_config
+    generate_systemd_service
+    generate_desktop_entry
     normalize_permissions
     build_deb
     verify_deb

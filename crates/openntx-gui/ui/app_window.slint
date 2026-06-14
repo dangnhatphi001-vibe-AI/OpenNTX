@@ -1,4 +1,5 @@
 // app_window.slint — OpenNTX GUI: Cyberpunk/Industrial Dark Mode
+// V2.8.1: Native File Dialog, Drag-and-Drop, Drop Zone
 
 import { Button, LineEdit, ScrollView, VerticalBox, HorizontalBox } from "std-widgets.slint";
 
@@ -8,7 +9,9 @@ global CyberPalette {
     in property <color> bg-deep: #0a0e17;
     in property <color> bg-panel: #111827;
     in property <color> bg-card: #1a2332;
+    in property <color> bg-drop: #0d1520;
     in property <color> border-dim: #1e3a5f;
+    in property <color> border-drop: #0e4a6f;
     in property <color> accent-cyan: #00d4ff;
     in property <color> accent-green: #00ff88;
     in property <color> accent-yellow: #ffcc00;
@@ -44,10 +47,12 @@ export component AppWindow inherits Window {
     in-out property <bool> is-deploying: false;
     in-out property <string> deploy-status: "IDLE";
     in-out property <string> exe-input-path: "";
+    in-out property <string> current-exe-path: "";
 
     // ── Callbacks ────────────────────────────────────────────────────────────
     callback deploy-clicked(string);
     callback refresh-clicked();
+    callback open-file-clicked();
 
     // ── Layout ───────────────────────────────────────────────────────────────
     VerticalBox {
@@ -115,15 +120,120 @@ export component AppWindow inherits Window {
             }
         }
 
-        // ── CENTER: App Grid ─────────────────────────────────────────────────
+        // ── CENTER: Drop Zone + Deploy + App Grid ────────────────────────────
         Rectangle {
             vertical-stretch: 1;
             background: CyberPalette.bg-deep;
 
             VerticalBox {
                 padding: 16px;
-                spacing: 8px;
+                spacing: 12px;
 
+                // ── Drop Zone ────────────────────────────────────────────────
+                Rectangle {
+                    height: 180px;
+                    background: root.current-exe-path == "" ? CyberPalette.bg-drop : CyberPalette.bg-card;
+                    border-width: 2px;
+                    border-color: root.current-exe-path == "" ? CyberPalette.border-drop : CyberPalette.accent-green;
+                    border-radius: 12px;
+
+                    VerticalBox {
+                        alignment: center;
+                        spacing: 12px;
+
+                        if root.current-exe-path == "": VerticalBox {
+                            alignment: center;
+                            spacing: 8px;
+                            Text {
+                                text: "⬇";
+                                font-size: 36px;
+                                color: CyberPalette.accent-cyan;
+                                horizontal-alignment: center;
+                            }
+                            Text {
+                                text: "DRAG & DROP WINDOWS .EXE HERE";
+                                font-size: 16px;
+                                font-weight: 700;
+                                color: CyberPalette.accent-cyan;
+                                horizontal-alignment: center;
+                                letter-spacing: 2px;
+                            }
+                            Text {
+                                text: "Or use the Browse button below";
+                                font-size: 11px;
+                                color: CyberPalette.text-dim;
+                                horizontal-alignment: center;
+                            }
+                        }
+
+                        if root.current-exe-path != "": VerticalBox {
+                            alignment: center;
+                            spacing: 6px;
+                            Text {
+                                text: "✓";
+                                font-size: 32px;
+                                color: CyberPalette.accent-green;
+                                horizontal-alignment: center;
+                            }
+                            Text {
+                                text: "READY TO DEPLOY";
+                                font-size: 14px;
+                                font-weight: 700;
+                                color: CyberPalette.accent-green;
+                                horizontal-alignment: center;
+                                letter-spacing: 2px;
+                            }
+                            Text {
+                                text: root.current-exe-path;
+                                font-size: 11px;
+                                color: CyberPalette.text-primary;
+                                horizontal-alignment: center;
+                                overflow: elide;
+                            }
+                        }
+
+                        Button {
+                            text: "📁 Browse .exe File";
+                            width: 200px;
+                            clicked => { root.open-file-clicked(); }
+                        }
+                    }
+                }
+
+                // ── Deploy Execution Target button ───────────────────────────
+                Rectangle {
+                    height: 48px;
+                    background: root.current-exe-path != "" && !root.is-deploying
+                        ? CyberPalette.accent-cyan
+                        : CyberPalette.bg-card;
+                    border-radius: 8px;
+                    border-width: 1px;
+                    border-color: root.current-exe-path != "" && !root.is-deploying
+                        ? CyberPalette.accent-cyan
+                        : CyberPalette.border-dim;
+
+                    Text {
+                        text: root.is-deploying ? "⏳ DEPLOYING..." : "⚡ DEPLOY EXECUTION TARGET";
+                        font-size: 15px;
+                        font-weight: 800;
+                        color: root.current-exe-path != "" && !root.is-deploying
+                            ? CyberPalette.bg-deep
+                            : CyberPalette.text-dim;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        letter-spacing: 1.5px;
+                    }
+
+                    TouchArea {
+                        clicked => {
+                            if root.current-exe-path != "" && !root.is-deploying {
+                                root.deploy-clicked(root.current-exe-path);
+                            }
+                        }
+                    }
+                }
+
+                // ── App Grid ─────────────────────────────────────────────────
                 HorizontalBox {
                     spacing: 8px;
                     Text {
@@ -188,7 +298,7 @@ export component AppWindow inherits Window {
                                 alignment: center;
                                 Text { text: "⊞"; font-size: 32px; color: CyberPalette.text-dim; }
                                 Text { text: "No applications installed yet."; font-size: 13px; color: CyberPalette.text-dim; }
-                                Text { text: "Click 'Deploy New EXE' to get started."; font-size: 11px; color: CyberPalette.text-dim; }
+                                Text { text: "Drag & drop a .exe or click Browse to get started."; font-size: 11px; color: CyberPalette.text-dim; }
                             }
                         }
                     }
@@ -196,9 +306,9 @@ export component AppWindow inherits Window {
             }
         }
 
-        // ── FOOTER: Deploy + Log Terminal ─────────────────────────────────────
+        // ── FOOTER: Log Terminal ─────────────────────────────────────────────
         Rectangle {
-            height: 240px;
+            height: 200px;
             background: CyberPalette.bg-panel;
             border-width: 1px;
             border-color: CyberPalette.border-dim;
@@ -206,39 +316,6 @@ export component AppWindow inherits Window {
             VerticalBox {
                 padding: 12px;
                 spacing: 8px;
-
-                HorizontalBox {
-                    spacing: 8px;
-                    height: 40px;
-
-                    Rectangle {
-                        horizontal-stretch: 1;
-                        height: 40px;
-                        border-radius: 6px;
-                        border-width: 1px;
-                        border-color: CyberPalette.border-dim;
-                        background: CyberPalette.bg-card;
-
-                        HorizontalBox {
-                            padding-left: 12px;
-                            padding-right: 12px;
-                            Text { text: "❯"; font-size: 14px; color: CyberPalette.accent-cyan; }
-                            LineEdit {
-                                horizontal-stretch: 1;
-                                text: root.exe-input-path;
-                                placeholder-text: "Enter path to .exe file...";
-                                accepted(text) => { root.exe-input-path = text; }
-                            }
-                        }
-                    }
-
-                    Button {
-                        text: root.is-deploying ? "⏳ Deploying..." : "⚡ Deploy New EXE";
-                        width: 180px;
-                        enabled: !root.is-deploying;
-                        clicked => { root.deploy-clicked(root.exe-input-path); }
-                    }
-                }
 
                 Rectangle {
                     vertical-stretch: 1;

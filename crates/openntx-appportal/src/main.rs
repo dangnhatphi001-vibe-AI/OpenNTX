@@ -28,9 +28,9 @@ use crossterm::{
 use events::{AppEvent, EventHandler, EventSender};
 use openntx_core::logs::show_log;
 use openntx_core::registry::AppRegistry;
-use openntx_core::runtime::RuntimeIpcServer;
+use openntx_core::runtime::{ApiBridgeServer, RuntimeIpcServer};
 use ratatui::{backend::CrosstermBackend, Terminal};
-use std::io;
+use std::io::{self, IsTerminal};
 use std::panic;
 
 // ── Terminal teardown helper ─────────────────────────────────────────────────
@@ -75,7 +75,51 @@ async fn main() -> Result<()> {
         original_hook(panic_info);
     }));
 
-    // ── 2. Terminal setup ────────────────────────────────────────────────────
+    // ── 2. Headless / TUI mode detection ─────────────────────────────────────
+    //
+    // When running under systemd or any non-interactive environment there is
+    // no TTY attached.  Calling `enable_raw_mode()` in that situation fails
+    // with OS error 6 (ENXIO) and systemd endlessly restarts the service.
+    //
+    // Detection: `std::io::IsTerminal` checks whether stdout is connected to
+    // a real terminal.  If it is NOT, we start only the API server components
+    // (IPC server, registry) and then park the async runtime with
+    // `std::future::pending()` so the REST API stays alive without a TUI.
+
+    if !io::stdout().is_terminal() {
+        // ── Headless mode (systemd / non-interactive) ─────────────────────
+        eprintln!("[DAEMON] Running in headless mode");
+        eprintln!("[DAEMON] API server will run on 127.0.0.1:8080");
+
+        // Start the Axum API bridge server as a background task.
+        tokio::spawn(async move {
+            if let Err(e) = ApiBridgeServer::start_server("127.0.0.1", 8080).await {
+                eprintln!("[DAEMON] API server error: {e}");
+            }
+        });
+        eprintln!("[DAEMON] API bridge server started on 127.0.0.1:8080");
+
+        // Start the IPC server so runtime capture messages are still accepted.
+        let _ipc_server = match RuntimeIpcServer::start(None) {
+            Ok((server, _rx)) => {
+                eprintln!("[DAEMON] IPC server started (headless).");
+                Some(server)
+            }
+            Err(e) => {
+                eprintln!("[DAEMON] IPC server not started: {e}");
+                None
+            }
+        };
+
+        // Park the main task forever so the tokio runtime stays alive.
+        // The Axum API server and IPC server continue serving requests
+        // on their spawned tasks.
+        eprintln!("[DAEMON] Headless daemon running. Send SIGTERM to stop.");
+        std::future::pending::<()>().await;
+        unreachable!("pending() never resolves");
+    }
+
+    // ── 3. Terminal setup (interactive TUI mode) ─────────────────────────────
     enable_raw_mode().context("failed to enable raw mode")?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)
@@ -88,16 +132,16 @@ async fn main() -> Result<()> {
     let mut terminal = Terminal::new(backend).context("failed to create terminal")?;
     terminal.clear().context("failed to clear terminal")?;
 
-    // ── 3. Application state ─────────────────────────────────────────────────
+    // ── 4. Application state ─────────────────────────────────────────────────
     let registry = AppRegistry::from_env().context("failed to initialise app registry")?;
     let mut app = AppState::new();
     app.refresh_apps(&registry);
     app.load_profiles();
 
-    // ── 4. Event system (dedicated OS thread, NOT tokio::spawn) ───────────────
+    // ── 5. Event system (dedicated OS thread, NOT tokio::spawn) ───────────────
     let events = EventHandler::new();
 
-    // ── 5. IPC server for live capture status from the runtime ───────────────
+    // ── 6. IPC server for live capture status from the runtime ───────────────
     // Start the UDS server and spawn a forwarding thread that converts
     // IPC messages into AppEvent::IpcCaptureStatus for the main loop.
     let _ipc_server = match RuntimeIpcServer::start(None) {
@@ -121,10 +165,10 @@ async fn main() -> Result<()> {
         }
     };
 
-    // ── 6. Run the async application loop ────────────────────────────────────
+    // ── 7. Run the async application loop ────────────────────────────────────
     let run_result = run_app(&mut terminal, &mut app, &registry, events).await;
 
-    // ── 7. Cleanup ───────────────────────────────────────────────────────────
+    // ── 8. Cleanup ───────────────────────────────────────────────────────────
     // `_guard` drops here → `restore_terminal()` is called.
     // `events` (and its sender clones) drop → OS reader thread exits.
     // `_ipc_server` drops here → socket file is cleaned up.

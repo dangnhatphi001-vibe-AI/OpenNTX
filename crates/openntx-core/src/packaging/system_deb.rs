@@ -23,7 +23,7 @@ use std::process::Command;
 // ── Constants ────────────────────────────────────────────────────────────────
 
 /// Default package version for the system .deb.
-const DEFAULT_VERSION: &str = "2.8.0";
+const DEFAULT_VERSION: &str = "3.0.0";
 
 /// Debian architecture tag.
 const DEBIAN_ARCH: &str = "amd64";
@@ -38,10 +38,12 @@ const MAINTAINER: &str = "OpenNTX Team <maintainer@openntx.org>";
 const HOMEPAGE: &str = "https://github.com/openntx/openntx";
 
 /// Runtime dependencies required by the package.
-const DEPENDS: &str = "libc6 (>= 2.31), libx11-6, libgcc-s1 (>= 3.0), libstdc++6 (>= 11)";
+/// wine-binfmt provides the Wine runtime for .exe execution.
+/// cgroup-tools provides cgcreate/cgexec for sandbox resource limits.
+const DEPENDS: &str = "libc6 (>= 2.31), libx11-6, libgcc-s1 (>= 3.0), libstdc++6 (>= 11), wine-binfmt | wine, cgroup-tools, systemd";
 
 /// Recommended (optional) dependencies.
-const RECOMMENDS: &str = "wine, xdg-utils";
+const RECOMMENDS: &str = "xdg-utils, xdg-desktop-portal";
 
 // ── Public Types ─────────────────────────────────────────────────────────────
 
@@ -183,8 +185,12 @@ pub fn build_system_deb(options: &SystemDebOptions) -> Result<SystemDebResult> {
     let dirs_to_create = [
         "DEBIAN",
         "usr/bin",
+        "usr/lib/systemd/system",
+        "usr/share/applications",
+        "usr/share/icons/hicolor/256x256/apps",
         "etc/openntx",
         "var/lib/openntx/sandboxes",
+        "var/log/openntx",
     ];
     for rel in &dirs_to_create {
         let dir = staging_root.join(rel);
@@ -231,6 +237,24 @@ pub fn build_system_deb(options: &SystemDebOptions) -> Result<SystemDebResult> {
         .map_err(|source| OpenNtxError::io(&sandbox_toml_path, source))?;
     file_count += 1;
     total_size += sandbox_content.len() as u64;
+
+    // ── Step 5b: Generate systemd service file ──────────────────────────
+
+    let service_content = generate_systemd_service();
+    let service_path = staging_root.join("usr/lib/systemd/system/openntx-core.service");
+    fs::write(&service_path, service_content.as_bytes())
+        .map_err(|source| OpenNtxError::io(&service_path, source))?;
+    file_count += 1;
+    total_size += service_content.len() as u64;
+
+    // ── Step 5c: Generate desktop entry ─────────────────────────────────
+
+    let desktop_content = generate_desktop_entry();
+    let desktop_path = staging_root.join("usr/share/applications/openntx.desktop");
+    fs::write(&desktop_path, desktop_content.as_bytes())
+        .map_err(|source| OpenNtxError::io(&desktop_path, source))?;
+    file_count += 1;
+    total_size += desktop_content.len() as u64;
 
     // ── Step 6: Generate DEBIAN/control ─────────────────────────────────
 
@@ -423,6 +447,8 @@ fn generate_system_control(version: &str, maintainer: &str, description: &str) -
     out.push_str("Installed-Size: 40960\n");
     out.push_str(&format!("Maintainer: {maintainer}\n"));
     out.push_str(&format!("Homepage: {HOMEPAGE}\n"));
+    out.push_str("Conffiles:\n");
+    out.push_str(" /etc/openntx/sandbox.toml\n");
 
     // Description field: first line is the short description, continuation
     // lines start with a single space. Empty continuation lines use " ."
@@ -586,6 +612,41 @@ setup_cgroup_hierarchy() {
     fi
 }
 
+# ── Enable and start systemd service ───────────────────────────────────────
+
+setup_systemd_service() {
+    if ! command -v systemctl >/dev/null 2>&1; then
+        log_action "systemctl not available — skipping service setup"
+        return 0
+    fi
+
+    # Reload systemd to pick up the new unit file
+    systemctl daemon-reload 2>/dev/null || true
+    log_action "systemd daemon-reload complete"
+
+    # Enable the service so it starts on boot
+    systemctl enable openntx-core.service 2>/dev/null || true
+    log_action "openntx-core.service enabled"
+
+    # Start the service immediately
+    systemctl start openntx-core.service 2>/dev/null || true
+    log_action "openntx-core.service started"
+}
+
+# ── Install desktop entry icon ─────────────────────────────────────────────
+
+install_icon() {
+    # Copy a placeholder icon if no icon exists yet.
+    # The GUI binary will render its own icon at runtime.
+    local icon_dir="/usr/share/icons/hicolor/256x256/apps"
+    local icon_path="${icon_dir}/openntx.png"
+    if [ ! -f "$icon_path" ] && [ -d "$icon_dir" ]; then
+        # Create a minimal 1x1 PNG as placeholder (49 bytes)
+        printf '\\x89PNG\\r\\n\\x1a\\n\\x00\\x00\\x00\\rIHDR\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x01\\x08\\x02\\x00\\x00\\x00\\x90wS\\xde\\x00\\x00\\x00\\x0cIDATx\\x9cc\\xf8\\x0f\\x00\\x00\\x01\\x01\\x00\\x05\\x18\\xd8N\\x00\\x00\\x00\\x00IEND\\xaeB`\\x82' > "$icon_path" 2>/dev/null || true
+        log_action "installed placeholder icon at $icon_path"
+    fi
+}
+
 # ── Main ───────────────────────────────────────────────────────────────────
 
 case "$1" in
@@ -595,7 +656,9 @@ case "$1" in
         set_permissions
         setup_binfmt
         setup_cgroup_hierarchy
-        log_action "installation complete"
+        install_icon
+        setup_systemd_service
+        log_action "installation complete — OpenNTX v3.0 Consumer Edition ready"
         ;;
     abort-upgrade|abort-remove|abort-deconfigure)
         # No action needed for these cases
@@ -607,6 +670,70 @@ case "$1" in
 esac
 
 exit 0
+"#
+    .to_string()
+}
+
+// ── Systemd Service ──────────────────────────────────────────────────────────
+
+/// Generate the `usr/lib/systemd/system/openntx-core.service` unit file.
+///
+/// The service runs the AppPortal binary which exposes the REST API on port 8080
+/// and manages the Windows application lifecycle via the core engine.
+fn generate_systemd_service() -> String {
+    r#"[Unit]
+Description=OpenNTX Windows Application Subsystem — Core Daemon
+Documentation=https://github.com/openntx/openntx
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/openntx-appportal
+Restart=on-failure
+RestartSec=3
+
+# Security hardening
+User=openntx
+Group=openntx
+NoNewPrivileges=false
+ProtectSystem=strict
+ReadWritePaths=/var/lib/openntx /var/log/openntx /tmp
+ProtectHome=read-only
+PrivateTmp=true
+
+# Resource limits
+MemoryMax=2G
+CPUQuota=80%
+
+# Environment
+Environment=RUST_LOG=info
+Environment=OPENNTX_API_ADDR=127.0.0.1:8080
+
+[Install]
+WantedBy=multi-user.target
+"#
+    .to_string()
+}
+
+/// Generate the `usr/share/applications/openntx.desktop` entry.
+///
+/// This file makes OpenNTX discoverable via the Linux application launcher
+/// (GNOME, KDE, XFCE, etc.) so users can search for "OpenNTX" and launch it.
+fn generate_desktop_entry() -> String {
+    r#"[Desktop Entry]
+Type=Application
+Name=OpenNTX
+GenericName=Windows Application Subsystem
+Comment=Run Windows applications on Linux with sandboxed isolation
+Exec=/usr/bin/openntx-gui %F
+Icon=openntx
+Terminal=false
+Categories=System;Emulator;
+MimeType=application/x-ms-dos-executable;application/x-ms-shortcut;
+Keywords=windows;exe;wine;sandbox;openntx;
+StartupWMClass=openntx-gui
+StartupNotify=true
 "#
     .to_string()
 }
@@ -700,22 +827,31 @@ reap_all_processes() {
 # ── Stop OpenNTX daemon services ────────────────────────────────────────────
 
 stop_daemons() {
-    # Stop systemd service if present
+    # Stop and disable systemd service if present
     if command -v systemctl >/dev/null 2>&1; then
         if systemctl is-active --quiet openntx-core.service 2>/dev/null; then
             systemctl stop openntx-core.service 2>/dev/null || true
             log_action "stopped openntx-core.service"
         fi
+        if systemctl is-enabled --quiet openntx-core.service 2>/dev/null; then
+            systemctl disable openntx-core.service 2>/dev/null || true
+            log_action "disabled openntx-core.service"
+        fi
+        systemctl daemon-reload 2>/dev/null || true
+        log_action "systemd daemon-reload complete"
     fi
 
     # Fallback: kill by process name
     local pids
-    pids=$(pgrep -u "$OPENNTX_USER" -f "openntx-core" 2>/dev/null || true)
+    pids=$(pgrep -u "$OPENNTX_USER" -f "openntx-appportal" 2>/dev/null || true)
+    if [ -z "$pids" ]; then
+        pids=$(pgrep -u "$OPENNTX_USER" -f "openntx-core" 2>/dev/null || true)
+    fi
     if [ -n "$pids" ]; then
         echo "$pids" | xargs kill -TERM 2>/dev/null || true
         sleep 0.5
         echo "$pids" | xargs kill -KILL 2>/dev/null || true
-        log_action "killed residual openntx-core processes"
+        log_action "killed residual openntx processes"
     fi
 }
 
@@ -965,6 +1101,8 @@ mod tests {
         assert!(script.contains("set_permissions"));
         assert!(script.contains("setup_binfmt"));
         assert!(script.contains("setup_cgroup_hierarchy"));
+        assert!(script.contains("setup_systemd_service"));
+        assert!(script.contains("install_icon"));
         assert!(script.contains("binfmt_misc"));
         assert!(script.contains("groupadd"));
         assert!(script.contains("useradd"));
@@ -972,6 +1110,9 @@ mod tests {
         assert!(script.contains("/sys/fs/cgroup/openntx"));
         assert!(script.contains("case \"$1\""));
         assert!(script.contains("configure"));
+        assert!(script.contains("systemctl daemon-reload"));
+        assert!(script.contains("systemctl enable openntx-core"));
+        assert!(script.contains("systemctl start openntx-core"));
     }
 
     #[test]
@@ -989,6 +1130,36 @@ mod tests {
         assert!(script.contains("echo -1 >"));
         assert!(script.contains("case \"$1\""));
         assert!(script.contains("remove"));
+        assert!(script.contains("systemctl stop openntx-core"));
+        assert!(script.contains("systemctl disable openntx-core"));
+        assert!(script.contains("openntx-appportal"));
+    }
+
+    #[test]
+    fn test_systemd_service_content() {
+        let service = generate_systemd_service();
+        assert!(service.contains("[Unit]"));
+        assert!(service.contains("[Service]"));
+        assert!(service.contains("[Install]"));
+        assert!(service.contains("ExecStart=/usr/bin/openntx-appportal"));
+        assert!(service.contains("User=openntx"));
+        assert!(service.contains("Restart=on-failure"));
+        assert!(service.contains("WantedBy=multi-user.target"));
+        assert!(service.contains("OPENNTX_API_ADDR=127.0.0.1:8080"));
+        assert!(service.contains("MemoryMax=2G"));
+        assert!(service.contains("ProtectSystem=strict"));
+    }
+
+    #[test]
+    fn test_desktop_entry_content() {
+        let desktop = generate_desktop_entry();
+        assert!(desktop.contains("[Desktop Entry]"));
+        assert!(desktop.contains("Name=OpenNTX"));
+        assert!(desktop.contains("Exec=/usr/bin/openntx-gui"));
+        assert!(desktop.contains("Icon=openntx"));
+        assert!(desktop.contains("Categories=System;Emulator;"));
+        assert!(desktop.contains("MimeType=application/x-ms-dos-executable"));
+        assert!(desktop.contains("Terminal=false"));
     }
 
     #[test]
@@ -1027,7 +1198,7 @@ mod tests {
     #[test]
     fn test_default_options() {
         let opts = SystemDebOptions::default();
-        assert_eq!(opts.version, "2.8.0");
+        assert_eq!(opts.version, "3.0.0");
         assert_eq!(opts.output_dir, PathBuf::from("target/debian"));
         assert!(!opts.dry_run);
         assert!(!opts.skip_build);
@@ -1044,10 +1215,13 @@ mod tests {
 
     #[test]
     fn test_control_depends_contains_critical_libs() {
-        let control = generate_system_control("2.8.0", "M <m@m.org>", "Desc");
+        let control = generate_system_control("3.0.0", "M <m@m.org>", "Desc");
         assert!(control.contains("libc6"));
         assert!(control.contains("libx11-6"));
         assert!(control.contains("libgcc-s1"));
         assert!(control.contains("libstdc++6"));
+        assert!(control.contains("wine"));
+        assert!(control.contains("cgroup-tools"));
+        assert!(control.contains("systemd"));
     }
 }

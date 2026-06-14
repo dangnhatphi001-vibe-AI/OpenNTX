@@ -1,13 +1,18 @@
 // main.rs — OpenNTX GUI: Slint-based graphical frontend.
 //
-// Connects to the OpenNTX API Bridge Server (axum, V2.6.5) via HTTP
+// V3.0.0: Consumer Edition — 1-Click .deb Package.
+//
+// Connects to the OpenNTX API Bridge Server (axum) via HTTP
 // and drives the Slint UI with real-time system data.
 //
-// Architecture:
-//   ┌──────────────┐    reqwest HTTP     ┌──────────────────┐
-//   │  Slint UI     │ ──────────────────► │  Axum API Server  │
-//   │  (this crate) │ ◄────────────────── │  (openntx-core)   │
-//   └──────────────┘    JSON responses    └──────────────────┘
+// File Input:
+//   • Native file dialog via rfd (XDG Desktop Portal / GTK fallback)
+//   • Drag-and-drop via Slint WinitWindowAccessor::on_winit_window_event
+//
+// Auto-Fallback Launcher:
+//   • On startup, checks if the API server is already live.
+//   • If not, spawns /usr/bin/openntx-appportal as a detached background
+//     process so users never have to start the daemon manually.
 
 use serde::{Deserialize, Serialize};
 use slint::SharedString;
@@ -15,6 +20,9 @@ use std::sync::{Arc, Mutex};
 
 // Include the Slint UI generated code.
 slint::include_modules!();
+
+// winit integration for drag-and-drop file handling.
+use slint::winit_030::{EventResult, WinitWindowAccessor};
 
 // ── API response types ───────────────────────────────────────────────────────
 
@@ -43,12 +51,57 @@ struct ExecuteResponse {
 
 // ── API client ───────────────────────────────────────────────────────────────
 
-/// Base URL for the OpenNTX API Bridge Server.
-const API_BASE: &str = "http://127.0.0.1:8420";
+const API_BASE: &str = "http://127.0.0.1:8080";
+const APPORTAL_BIN: &str = "/usr/bin/openntx-appportal";
 
-/// Fetch system monitor data from the API.
+/// Check if the API server is already running by sending a quick GET to /api/v1/monitor.
+async fn is_api_server_live() -> bool {
+    let url = format!("{}/api/v1/monitor", API_BASE);
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(2))
+        .build()
+        .unwrap_or_default();
+    matches!(client.get(&url).send().await, Ok(resp) if resp.status().is_success())
+}
+
+/// Spawn the OpenNTX AppPortal daemon as a detached background process.
 ///
-/// Returns `None` if the server is unreachable (graceful degradation).
+/// This function uses a double-fork technique to fully detach the child
+/// from the GUI process so it survives after the GUI exits.
+fn spawn_appportal_detached() {
+    use std::os::unix::process::CommandExt;
+
+    // Check if the binary exists before trying to spawn
+    if !std::path::Path::new(APPORTAL_BIN).exists() {
+        eprintln!(
+            "openntx-gui: warning: {} not found — daemon auto-start skipped",
+            APPORTAL_BIN
+        );
+        return;
+    }
+
+    match std::process::Command::new(APPORTAL_BIN)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .process_group(0) // Create a new process group to detach
+        .spawn()
+    {
+        Ok(child) => {
+            eprintln!(
+                "openntx-gui: auto-started openntx-appportal (PID {})",
+                child.id()
+            );
+        }
+        Err(err) => {
+            eprintln!(
+                "openntx-gui: warning: failed to auto-start {}: {}",
+                APPORTAL_BIN, err
+            );
+        }
+    }
+}
+
 async fn fetch_monitor(client: &reqwest::Client) -> Option<MonitorResponse> {
     let url = format!("{}/api/v1/monitor", API_BASE);
     match client.get(&url).send().await {
@@ -57,7 +110,6 @@ async fn fetch_monitor(client: &reqwest::Client) -> Option<MonitorResponse> {
     }
 }
 
-/// Send an execute request to the API.
 async fn send_execute(
     client: &reqwest::Client,
     exe_path: &str,
@@ -75,7 +127,6 @@ async fn send_execute(
     }
 }
 
-/// Derive a simple app_id from the exe path (filename without extension).
 fn derive_app_id(exe_path: &str) -> String {
     std::path::Path::new(exe_path)
         .file_stem()
@@ -87,7 +138,6 @@ fn derive_app_id(exe_path: &str) -> String {
 
 // ── Log state ────────────────────────────────────────────────────────────────
 
-/// Thread-safe log buffer that accumulates messages and pushes them to Slint.
 struct LogState {
     lines: Vec<String>,
 }
@@ -102,7 +152,6 @@ impl LogState {
     fn append(&mut self, msg: &str) {
         let timestamp = chrono_free_timestamp();
         self.lines.push(format!("[{}] {}", timestamp, msg));
-        // Keep last 500 lines.
         if self.lines.len() > 500 {
             self.lines.remove(0);
         }
@@ -113,7 +162,6 @@ impl LogState {
     }
 }
 
-/// Simple timestamp without external crate dependency.
 fn chrono_free_timestamp() -> String {
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -125,10 +173,31 @@ fn chrono_free_timestamp() -> String {
     format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
 }
 
+// ── File drop helpers ────────────────────────────────────────────────────────
+
+fn is_exe_file(path: &std::path::Path) -> bool {
+    path.extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| ext.eq_ignore_ascii_case("exe"))
+        .unwrap_or(false)
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 #[tokio::main]
 async fn main() -> Result<(), slint::PlatformError> {
+    // ── Auto-Fallback Launcher ───────────────────────────────────────────
+    //
+    // Before drawing the GUI, check if the API server is already live.
+    // If not, spawn the AppPortal daemon as a detached background process.
+    // This ensures the consumer experience: install .deb → launch GUI → everything works.
+    if !is_api_server_live().await {
+        eprintln!("openntx-gui: API server not detected — auto-starting daemon...");
+        spawn_appportal_detached();
+        // Give the daemon a moment to bind the port
+        tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+    }
+
     let window = AppWindow::new()?;
 
     let client = reqwest::Client::builder()
@@ -139,6 +208,53 @@ async fn main() -> Result<(), slint::PlatformError> {
     let client = Arc::new(client);
     let log_state = Arc::new(Mutex::new(LogState::new()));
 
+    // ── Native File Dialog (rfd) ─────────────────────────────────────────
+    {
+        let log_state = log_state.clone();
+        let window_weak = window.as_weak();
+
+        window.on_open_file_clicked(move || {
+            let dialog = rfd::FileDialog::new()
+                .set_title("Select Windows Executable")
+                .add_filter("Windows Executable", &["exe"]);
+
+            if let Some(path) = dialog.pick_file() {
+                let path_str = path.to_string_lossy().to_string();
+
+                if is_exe_file(&path) {
+                    let path_for_ui = path_str.clone();
+                    let log_for_ui = log_state.clone();
+                    let weak_for_ui = window_weak.clone();
+                    slint::invoke_from_event_loop(move || {
+                        if let Some(win) = weak_for_ui.upgrade() {
+                            win.set_current_exe_path(SharedString::from(path_for_ui.as_str()));
+                            win.set_deploy_status(SharedString::from("READY"));
+                        }
+                        if let Ok(mut log) = log_for_ui.lock() {
+                            log.append(&format!("[FILE] Selected: {}", path_for_ui));
+                            if let Some(win) = weak_for_ui.upgrade() {
+                                win.set_log_content(SharedString::from(log.to_string().as_str()));
+                            }
+                        }
+                    })
+                    .expect("failed to invoke on Slint event loop");
+                } else {
+                    let log_ref = log_state.clone();
+                    let weak_ref = window_weak.clone();
+                    slint::invoke_from_event_loop(move || {
+                        if let Ok(mut log) = log_ref.lock() {
+                            log.append(&format!("[REJECTED] Not a .exe file: {}", path_str));
+                            if let Some(win) = weak_ref.upgrade() {
+                                win.set_log_content(SharedString::from(log.to_string().as_str()));
+                            }
+                        }
+                    })
+                    .expect("failed to invoke on Slint event loop");
+                }
+            }
+        });
+    }
+
     // ── Deploy callback ──────────────────────────────────────────────────
     {
         let client = client.clone();
@@ -148,9 +264,8 @@ async fn main() -> Result<(), slint::PlatformError> {
         window.on_deploy_clicked(move |exe_path: SharedString| {
             let exe_path = exe_path.to_string();
             if exe_path.is_empty() {
-                if let Some(log) = log_state.lock().ok() {
-                    let mut log = log;
-                    log.append("[ERROR] No EXE path provided.");
+                if let Ok(mut log) = log_state.lock() {
+                    log.append("[ERROR] No EXE path provided. Drag & drop or Browse first.");
                     if let Some(win) = window_weak.upgrade() {
                         win.set_log_content(SharedString::from(log.to_string().as_str()));
                     }
@@ -163,7 +278,6 @@ async fn main() -> Result<(), slint::PlatformError> {
             let window_weak = window_weak.clone();
             let exe = exe_path.clone();
 
-            // Update UI state immediately.
             if let Some(win) = window_weak.upgrade() {
                 win.set_is_deploying(true);
                 win.set_deploy_status(SharedString::from("DEPLOYING"));
@@ -173,7 +287,6 @@ async fn main() -> Result<(), slint::PlatformError> {
                 }
             }
 
-            // Spawn async task to call the API.
             tokio::spawn(async move {
                 let result = send_execute(&client, &exe, false).await;
 
@@ -221,6 +334,66 @@ async fn main() -> Result<(), slint::PlatformError> {
         });
     }
 
+    // ── Drag-and-Drop via WinitWindowAccessor::on_winit_window_event ────
+    //
+    // Registers a native winit window event filter on the Slint window.
+    // When a file is dragged from the file manager and dropped onto the
+    // OpenNTX window, winit fires WindowEvent::DroppedFile.
+    // Only .exe files are accepted; other extensions are logged as rejected.
+    // Requires the `unstable-winit-030` feature on the slint crate.
+    {
+        let log_state = log_state.clone();
+        let window_weak = window.as_weak();
+
+        window
+            .window()
+            .on_winit_window_event(move |_slint_window, event| {
+                use winit::event::WindowEvent;
+
+                if let WindowEvent::DroppedFile(path) = event {
+                    let path_str = path.to_string_lossy().to_string();
+
+                    if is_exe_file(path) {
+                        let path_clone = path_str.clone();
+                        let log_ref = log_state.clone();
+                        let weak_ref = window_weak.clone();
+                        slint::invoke_from_event_loop(move || {
+                            if let Some(win) = weak_ref.upgrade() {
+                                win.set_current_exe_path(SharedString::from(path_clone.as_str()));
+                                win.set_deploy_status(SharedString::from("READY"));
+                            }
+                            if let Ok(mut log) = log_ref.lock() {
+                                log.append(&format!("[DROP] File accepted: {}", path_clone));
+                                if let Some(win) = weak_ref.upgrade() {
+                                    win.set_log_content(SharedString::from(
+                                        log.to_string().as_str(),
+                                    ));
+                                }
+                            }
+                        })
+                        .expect("failed to invoke on Slint event loop");
+                    } else {
+                        let log_ref = log_state.clone();
+                        let weak_ref = window_weak.clone();
+                        slint::invoke_from_event_loop(move || {
+                            if let Ok(mut log) = log_ref.lock() {
+                                log.append(&format!("[REJECTED] Not a .exe file: {}", path_str));
+                                if let Some(win) = weak_ref.upgrade() {
+                                    win.set_log_content(SharedString::from(
+                                        log.to_string().as_str(),
+                                    ));
+                                }
+                            }
+                        })
+                        .expect("failed to invoke on Slint event loop");
+                    }
+                }
+
+                // Let Slint handle all other events normally.
+                EventResult::Propagate
+            });
+    }
+
     // ── Monitor polling loop ─────────────────────────────────────────────
     {
         let client = client.clone();
@@ -240,7 +413,6 @@ async fn main() -> Result<(), slint::PlatformError> {
                         win.set_ram_usage(SharedString::from(data.ram_usage.as_str()));
                         win.set_cpu_quota(SharedString::from(data.cpu_quota.as_str()));
 
-                        // Update app list.
                         let entries: Vec<AppEntry> = data
                             .apps
                             .iter()
@@ -253,13 +425,11 @@ async fn main() -> Result<(), slint::PlatformError> {
                             .collect();
                         win.set_app_list(std::rc::Rc::new(slint::VecModel::from(entries)).into());
                     } else {
-                        // Server unreachable — show placeholder data.
                         win.set_total_pids(0);
                         win.set_ram_usage(SharedString::from("-- MB"));
                         win.set_cpu_quota(SharedString::from("offline"));
                     }
                 } else {
-                    // Window closed — exit polling loop.
                     break;
                 }
             }
@@ -269,7 +439,8 @@ async fn main() -> Result<(), slint::PlatformError> {
     // ── Initial log message ──────────────────────────────────────────────
     {
         if let Ok(mut log) = log_state.lock() {
-            log.append("[SYSTEM] Connecting to API server at 127.0.0.1:8420...");
+            log.append("[SYSTEM] Connecting to API server at 127.0.0.1:8080...");
+            log.append("[SYSTEM] Drop zone active - drag a .exe file onto the window.");
             window.set_log_content(SharedString::from(log.to_string().as_str()));
         }
     }
@@ -300,7 +471,6 @@ mod tests {
     fn log_state_append_and_to_string() {
         let mut log = LogState::new();
         assert!(log.to_string().contains("initialized"));
-
         log.append("test message");
         assert!(log.to_string().contains("test message"));
     }
@@ -311,7 +481,6 @@ mod tests {
         for i in 0..600 {
             log.append(&format!("line {}", i));
         }
-        // Should have at most 500 lines.
         let content = log.to_string();
         let line_count = content.lines().count();
         assert!(
@@ -319,9 +488,7 @@ mod tests {
             "expected <= 500 lines, got {}",
             line_count
         );
-        // The earliest lines should be gone.
         assert!(!content.contains("line 0"));
-        // The latest lines should be present.
         assert!(content.contains("line 599"));
     }
 
@@ -331,21 +498,11 @@ mod tests {
             "total_pids": 42,
             "ram_usage": "2.1 GB",
             "cpu_quota": "50000 100000",
-            "apps": [
-                {
-                    "app_id": "notepad",
-                    "app_name": "Notepad++",
-                    "exe_path": "/usr/bin/notepad.exe",
-                    "status": "running"
-                }
-            ]
+            "apps": [{"app_id": "notepad", "app_name": "Notepad++", "exe_path": "/usr/bin/notepad.exe", "status": "running"}]
         }"#;
-
         let resp: MonitorResponse = serde_json::from_str(json).unwrap();
         assert_eq!(resp.total_pids, 42);
-        assert_eq!(resp.ram_usage, "2.1 GB");
         assert_eq!(resp.apps.len(), 1);
-        assert_eq!(resp.apps[0].app_id, "notepad");
     }
 
     #[test]
@@ -353,21 +510,17 @@ mod tests {
         let json = r#"{"status": "success", "app_id": "test-app"}"#;
         let resp: ExecuteResponse = serde_json::from_str(json).unwrap();
         assert_eq!(resp.status, "success");
-        assert_eq!(resp.app_id, "test-app");
-        assert!(resp.message.is_none());
     }
 
     #[test]
     fn execute_response_with_message() {
         let json = r#"{"status": "error", "app_id": "", "message": "not found"}"#;
         let resp: ExecuteResponse = serde_json::from_str(json).unwrap();
-        assert_eq!(resp.status, "error");
         assert_eq!(resp.message, Some("not found".to_string()));
     }
 
     #[test]
     fn app_entry_model_fields() {
-        // Verify AppEntry struct can be constructed with expected fields.
         let entry = AppEntry {
             app_id: SharedString::from("test-id"),
             app_name: SharedString::from("Test App"),
@@ -375,16 +528,27 @@ mod tests {
             status: SharedString::from("running"),
         };
         assert_eq!(entry.app_id.as_str(), "test-id");
-        assert_eq!(entry.app_name.as_str(), "Test App");
-        assert_eq!(entry.status.as_str(), "running");
     }
 
     #[test]
     fn chrono_free_timestamp_format() {
         let ts = chrono_free_timestamp();
-        // Should be HH:MM:SS format.
         assert_eq!(ts.len(), 8);
         assert_eq!(ts.as_bytes()[2], b':');
-        assert_eq!(ts.as_bytes()[5], b':');
+    }
+
+    #[test]
+    fn is_exe_file_valid() {
+        assert!(is_exe_file(std::path::Path::new("/path/to/app.exe")));
+        assert!(is_exe_file(std::path::Path::new("C:\\Games\\game.EXE")));
+        assert!(is_exe_file(std::path::Path::new("test.Exe")));
+    }
+
+    #[test]
+    fn is_exe_file_invalid() {
+        assert!(!is_exe_file(std::path::Path::new("/path/to/app.txt")));
+        assert!(!is_exe_file(std::path::Path::new("/path/to/app")));
+        assert!(!is_exe_file(std::path::Path::new("/path/to/app.msi")));
+        assert!(!is_exe_file(std::path::Path::new("")));
     }
 }

@@ -12,30 +12,27 @@
 
 <p align="center">
   <a href="https://github.com/openntx/openntx/actions/workflows/ci.yml"><img src="https://github.com/openntx/openntx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/version-v2.8.0--alpha-brightgreen" alt="Version">
-  <img src="https://img.shields.io/badge/era-Distribution%20%26%20Packaging-critical" alt="Era">
+  <img src="https://img.shields.io/badge/version-v3.0.0--alpha-brightgreen" alt="Version">
+  <img src="https://img.shields.io/badge/era-Consumer%20Edition-critical" alt="Era">
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="License">
   <img src="https://img.shields.io/badge/runtime-LIVE-brightgreen" alt="Runtime">
 </p>
 
-> **Version: v2.8.0-alpha — The Distribution & Debian Packaging Era**
+> **Version: v3.0.0-alpha — The Consumer Edition**
 >
-> OpenNTX has crossed the Rubicon. The V1.x identity layer is complete.
-> The kernel now recognises `.exe` files natively, the runtime executes them
-> in isolated sandboxes with cgroups v2 resource governance and namespace
-> isolation, the reaper engine culls zombie processes, the TUI monitors
-> every capture event in real time through a live IPC bridge, the
-> graphics stub provides virtual window surfaces for Windows GDI/DirectX
-> applications, and the isolated registry engine emulates Windows Registry
-> hives via per-app TOML files. The RESTful API Bridge (`axum`) exposes
-> `/api/v1/execute` and `/api/v1/purge` endpoints for GUI integration.
-> The Slint-based graphical frontend (`openntx-gui`) provides a Cyberpunk
-> Dark Mode interface with real-time system monitoring, app deployment,
-> and live log terminal. The **Automated Debian Package Generation Engine**
-> packages the entire platform into a production-ready `.deb` with
-> maintainer scripts for binfmt_misc registration, cgroups v2 setup,
-> and the Reaper Engine for graceful process cleanup on removal.
-> This is no longer a planning tool — **it is a distributable subsystem.**
+> OpenNTX is now a **1-click install** application. `sudo dpkg -i openntx.deb`
+> and the entire platform is live — systemd daemon auto-starts, `.exe` files
+> are intercepted by the kernel via `binfmt_misc`, the Slint GUI launches
+> from the application menu, and the API server runs headless in the background.
+>
+> The runtime executes Windows applications in isolated sandboxes with cgroups v2
+> resource governance and namespace isolation. The reaper engine culls zombie
+> processes. The Slint-based graphical frontend provides drag-and-drop file
+> deployment, native file dialogs, and real-time system monitoring. The
+> AppPortal daemon auto-detects headless environments (systemd) and parks
+> the API server with `std::future::pending()` — no TUI, no crash loops.
+>
+> This is no longer a subsystem under construction — **it is a consumer product.**
 
 ---
 
@@ -213,12 +210,22 @@ learns.
 
 - [x] **V2.8.0 — Automated Debian Package Generation Engine**
   Full platform `.deb` packaging via `openntx system-package build`.
-  Generates `DEBIAN/control` (deps: libc6, libx11-6, libgcc-s1, libstdc++6),
-  `postinst` (system user creation, sandbox dirs, binfmt_misc PE registration,
-  cgroups v2 hierarchy), `prerm` (Reaper Engine: SIGTERM→SIGKILL all managed
-  PIDs, binfmt unregister, cgroup cleanup). Default `sandbox.toml` with
-  cgroups limits (2 GiB RAM, 50% CPU, 256 PIDs), network jail (default:
-  none), filesystem/process isolation. Shell automation via `tools/build-deb.sh`.
+  Generates `DEBIAN/control`, `postinst`, `prerm`. Default `sandbox.toml`.
+  Shell automation via `tools/build-deb.sh`.
+
+- [x] **V2.8.1 — Native File Dialog & Drag-and-Drop GUI**
+  `openntx-gui` upgraded with `rfd` (native XDG Desktop Portal file picker),
+  `winit` drag-and-drop via `WinitWindowAccessor::on_winit_window_event`,
+  central Drop Zone UI with Browse button, and DEPLOY EXECUTION TARGET button.
+
+- [x] **V3.0.0 — Consumer Edition: 1-Click .deb, Systemd, Headless Daemon**
+  `openntx-core.service` systemd unit auto-starts API server on boot.
+  `postinst`: `systemctl enable/start openntx-core`. `prerm`: `systemctl
+  disable/stop` + Reaper Engine cleanup. `Depends:` now requires `wine-binfmt
+  | wine`, `cgroup-tools`, `systemd`. Desktop entry (`openntx.desktop`) with
+  MIME type `application/x-ms-dos-executable`. AppPortal headless mode:
+  `IsTerminal` check → `std::future::pending()` parks API server when no TTY.
+  GUI auto-fallback launcher: spawns daemon if API server not detected.
 
 ---
 
@@ -362,17 +369,20 @@ crates/
                      Shell completions (bash, zsh, fish).
 
   openntx-appportal  Async TUI (ratatui + crossterm). Dedicated OS thread
-                     for input. Tokio background workers. Live IPC bridge
-                     for real-time capture status display.
+                     for input. Tokio background workers. Live IPC bridge.
+                     Headless mode: IsTerminal check → std::future::pending()
+                     parks API server when no TTY (systemd compatible).
 
   openntx-gui        Slint-based graphical frontend (Cyberpunk Dark Mode).
-                     System monitor, app grid, deploy, real-time log.
-                     Async API client via reqwest + tokio polling.
+                     Native file dialog (rfd), drag-and-drop (winit),
+                     Drop Zone UI, deploy button. Auto-fallback launcher:
+                     spawns daemon if API server not detected.
 
-  packaging/         System-level .deb packaging engine (V2.8).
+  packaging/         System-level .deb packaging engine (V3.0).
   (inside core)      build_system_deb() → staging layout → DEBIAN/control,
-                     postinst (binfmt + cgroups), prerm (Reaper Engine).
-                     Default sandbox.toml config. tools/build-deb.sh automation.
+                     postinst (systemd enable/start), prerm (Reaper Engine).
+                     Systemd service, desktop entry, sandbox.toml.
+                     tools/build-deb.sh automation.
 ```
 
 **Runtime module structure (`openntx-core/src/runtime/`):**
@@ -400,7 +410,12 @@ crates/
 |---|---|
 | `ratatui` | Terminal UI rendering |
 | `crossterm` | Terminal I/O (raw mode, alternate screen) |
+| `slint` | GUI framework (Cyberpunk Dark Mode) |
+| `rfd` | Native file dialog (XDG Desktop Portal) |
+| `winit` | Window management, drag-and-drop events |
 | `tokio` | Async runtime for TUI event loop and workers |
+| `reqwest` | HTTP client for API bridge communication |
+| `axum` | RESTful API server (execute, purge endpoints) |
 | `serde` / `serde_json` | JSON serialization (manifests, profiles, IPC) |
 | `inotify` | Linux filesystem event monitoring |
 | `libc` | POSIX calls (`fcntl`, `geteuid`, `O_NONBLOCK`) |
@@ -424,7 +439,7 @@ crates/
 
 ## Test Coverage
 
-**335 tests, 0 failures.** Full breakdown:
+**339 tests, 0 failures.** Full breakdown:
 
 | Module | Tests | Coverage |
 |---|---|---|
@@ -434,11 +449,11 @@ crates/
 | `runtime::ipc` | 9 | Message round-trip, server-client E2E, cleanup, error handling |
 | `runtime::cgroups` | 17 | Path generation, sanitization, cpu_max_from_percent, apply_limits, cleanup |
 | `runtime::reaper` | 19 | PID parsing, SIGTERM/SIGKILL flow, cgroup cleanup, signal helpers |
-| `packaging::system_deb` | 8 | Control file format, postinst/prerm scripts, TOML validation, deps |
+| `packaging::system_deb` | 10 | Control file format, postinst/prerm scripts, TOML validation, deps, systemd service, desktop entry |
 | `runtime::graphics` | 22 | Surface creation, HWND allocation, GDI flush, framebuffer I/O, destruction |
 | `runtime::registry` | 24 | Write-then-read, persistence, TOML validation, hive CRUD, key normalization |
 | `runtime::api` | 6 | Execute endpoint, purge endpoint, validation, error handling, 404 |
-| `openntx-gui` | 9 | App ID derivation, log state, monitor response, execute response, timestamp |
+| `openntx-gui` | 11 | App ID derivation, log state, monitor response, execute response, timestamp, is_exe_file |
 | `profile` | 12 | CRUD, round-trip, arch serde, optional fields |
 | `capture::realtime` | 7 | inotify events, nested dirs, ordering, shutdown |
 | `capture::snapshot/diff` | 14 | Snapshots, diffs, symlinks, registry tracking |
@@ -472,10 +487,16 @@ cargo build --release
 # Build a .deb package (per-app)
 ./target/release/openntx package build <app-id> --yes
 
-# Build the full system .deb package
-./tools/build-deb.sh --version 2.8.0
+# Build the full system .deb (V3.0 Consumer Edition)
+./tools/build-deb.sh --version 3.0.0
 # Or via CLI:
-./target/release/openntx system-package build --version 2.8.0
+./target/release/openntx system-package build --version 3.0.0
+
+# Install and run (after dpkg -i)
+sudo dpkg -i target/debian/openntx_3.0.0_amd64.deb
+# Daemon auto-starts via systemd. GUI available in app menu.
+# Or launch manually:
+./target/release/openntx-gui
 
 # Register binfmt_misc (requires root)
 sudo ./target/release/openntx runtime register
@@ -535,6 +556,53 @@ See [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) for commercial use.
 ---
 
 ## Release Notes
+
+### v3.0.0-alpha — Consumer Edition: 1-Click Install, Systemd, Headless Daemon
+
+#### Overview
+
+OpenNTX v3.0.0-alpha transforms the platform from a developer tool into a
+**consumer-ready product**. `sudo dpkg -i openntx.deb` is all you need — the
+systemd daemon auto-starts, the GUI appears in the application menu, and
+`.exe` files work immediately via `binfmt_misc`.
+
+#### New Features
+
+**Systemd Integration**
+- `openntx-core.service` systemd unit file auto-starts the API server on boot.
+- `postinst`: `systemctl daemon-reload` → `enable` → `start` on install.
+- `prerm`: `systemctl stop` → `disable` → `daemon-reload` on removal.
+- `Type=simple`, `Restart=on-failure`, `RestartSec=3`. No watchdog.
+
+**Headless Daemon Mode**
+- AppPortal detects non-interactive environments via `std::io::IsTerminal`.
+- When no TTY is attached (systemd, Docker, SSH), starts in headless mode:
+  spawns Axum API server on `127.0.0.1:8080`, parks main thread with
+  `std::future::pending()`. No crash loops, no ENXIO errors.
+
+**GUI Auto-Fallback Launcher**
+- `openntx-gui` probes `http://127.0.0.1:8080` on startup.
+- If API server is not running, auto-spawns `/usr/bin/openntx-appportal`
+  as a detached background process. Users never need to start the daemon manually.
+
+**Native File Dialog & Drag-and-Drop**
+- `rfd` crate for native XDG Desktop Portal file picker (`.exe` filter).
+- `winit` drag-and-drop via `WinitWindowAccessor::on_winit_window_event`.
+- Central Drop Zone UI with Browse button and DEPLOY EXECUTION TARGET.
+
+**Updated Dependencies (`Depends:`)**
+- `wine-binfmt | wine` — Required for .exe execution.
+- `cgroup-tools` — Required for sandbox resource limits.
+- `systemd` — Required for daemon lifecycle management.
+
+**Desktop Entry**
+- `openntx.desktop` installed to `/usr/share/applications/`.
+- MIME type `application/x-ms-dos-executable` for .exe file association.
+- `Exec=/usr/bin/openntx-gui %F` — double-click .exe opens GUI.
+
+#### Quality
+
+- 0 errors, 0 warnings. 339/339 tests pass. `cargo fmt` clean.
 
 ### v2.8.0-alpha — Automated Debian Package Generation Engine
 
@@ -596,15 +664,19 @@ Debian-distributable application subsystem for Linux.
 #### Package Layout
 
 ```text
-target/debian/openntx_2.8.0_amd64.deb
+target/debian/openntx_3.0.0_amd64.deb
 ├── DEBIAN/
-│   ├── control           Package: openntx, Architecture: amd64
-│   ├── postinst          User creation, binfmt, cgroups, sandbox setup
-│   └── prerm             Reaper Engine, binfmt unregister, cgroup cleanup
+│   ├── control           Package: openntx, Depends: wine, cgroup-tools, systemd
+│   ├── postinst          User creation, binfmt, cgroups, systemd enable/start
+│   └── prerm             Reaper Engine, systemd disable/stop, cgroup cleanup
 ├── usr/bin/
 │   ├── openntx           CLI binary
-│   ├── openntx-gui       Slint GUI binary
-│   └── openntx-appportal App Portal binary
+│   ├── openntx-gui       Slint GUI binary (drag-drop, native file dialog)
+│   └── openntx-appportal App Portal binary (API server + headless daemon)
+├── usr/lib/systemd/system/
+│   └── openntx-core.service   Systemd unit (Type=simple, Restart=on-failure)
+├── usr/share/applications/
+│   └── openntx.desktop         Desktop entry (Exec=openntx-gui, MIME .exe)
 ├── etc/openntx/
 │   └── sandbox.toml      Default sandbox configuration
 └── var/lib/openntx/
@@ -613,8 +685,8 @@ target/debian/openntx_2.8.0_amd64.deb
 
 #### Dependencies
 
-- Required: `libc6 (>= 2.31)`, `libx11-6`, `libgcc-s1 (>= 3.0)`, `libstdc++6 (>= 11)`
-- Recommended: `wine`, `xdg-utils`
+- Required: `libc6 (>= 2.31)`, `libx11-6`, `libgcc-s1 (>= 3.0)`, `libstdc++6 (>= 11)`, `wine-binfmt | wine`, `cgroup-tools`, `systemd`
+- Recommended: `xdg-utils`, `xdg-desktop-portal`
 
 #### Files Changed/Created
 

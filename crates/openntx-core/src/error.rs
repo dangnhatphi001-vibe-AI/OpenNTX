@@ -80,6 +80,9 @@ pub enum OpenNtxError {
 
     #[error("registry key invalid: {0}")]
     RegistryKeyInvalid(String),
+
+    #[error("system .deb build failed: {0}")]
+    SystemDebBuild(String),
 }
 
 pub type Result<T> = std::result::Result<T, OpenNtxError>;

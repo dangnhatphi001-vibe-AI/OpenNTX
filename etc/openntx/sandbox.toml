@@ -1,0 +1,116 @@
+# openntx sandbox.toml — Default sandbox configuration.
+# Installed to /etc/openntx/sandbox.toml by the openntx Debian package.
+#
+# This file defines the default resource limits and isolation policies
+# applied to sandboxed Windows applications running under OpenNTX.
+#
+# Per-application overrides can be placed in:
+#   /var/lib/openntx/sandboxes/<app_id>/sandbox.toml
+
+[sandbox]
+# Enable or disable sandboxing globally.
+# When false, applications run without cgroup or namespace restrictions.
+enabled = true
+
+# Default sandbox profile: "strict", "standard", or "permissive".
+# Individual app manifests can override this.
+default_profile = "standard"
+
+# ── Cgroups v2 Resource Limits ──────────────────────────────────────────────
+
+[sandbox.cgroups]
+# Root path for the OpenNTX cgroup v2 hierarchy.
+# Created automatically by the postinst script.
+root_path = "/sys/fs/cgroup/openntx"
+
+# Default maximum memory per application (in bytes).
+# 2 GiB — applications can override via their manifest.
+default_memory_max = 2147483648
+
+# Default CPU bandwidth quota.
+# Format: "$MAX $PERIOD" in microseconds.
+# "50000 100000" = 50% of one CPU core.
+# "max" = no CPU limit.
+default_cpu_max = "50000 100000"
+
+# CPU period in microseconds (100ms = standard Linux default).
+cpu_period = 100000
+
+# Maximum number of PIDs per application cgroup.
+# Prevents fork bombs inside the sandbox.
+default_pids_max = 256
+
+# ── Network Jail ────────────────────────────────────────────────────────────
+
+[sandbox.network]
+# Network isolation mode: "none", "host", "bridge", "isolated".
+# "none"    = no network access (default for untrusted apps).
+# "host"    = share the host network namespace.
+# "bridge"  = connect to the openntx bridge (10.200.0.0/24).
+# "isolated" = loopback only (127.0.0.1).
+default_mode = "none"
+
+# Enable loopback interface inside the sandbox even when mode = "none".
+# Some Windows applications expect localhost to be available.
+enable_loopback = true
+
+# DNS configuration for bridge mode.
+# The sandbox runs its own DNS resolver at this address.
+bridge_dns = "10.200.0.1"
+
+# ── Filesystem Isolation ────────────────────────────────────────────────────
+
+[sandbox.filesystem]
+# Mount namespace strategy: "private", "shared", or "chroot".
+# "private" = MS_PRIVATE mount propagation (default).
+# "shared"  = inherit host mounts.
+# "chroot"  = chroot into the app directory only.
+default_mount_strategy = "private"
+
+# Bind-mount the host /tmp into the sandbox.
+# Set to false for strict isolation.
+mount_tmp = false
+
+# Bind-mount the host /dev/null, /dev/zero, /dev/urandom.
+mount_dev = true
+
+# Bind-mount the host fonts directory (/usr/share/fonts).
+mount_fonts = true
+
+# ── Process Isolation ───────────────────────────────────────────────────────
+
+[sandbox.process]
+# Drop all Linux capabilities except the minimum required.
+drop_capabilities = true
+
+# Use a dedicated user namespace for the sandboxed process.
+# Requires kernel.unprivileged_userns_clone = 1.
+use_user_namespace = false
+
+# Set the nice value for sandboxed processes (higher = lower priority).
+# Range: -20 (highest) to 19 (lowest).
+nice_value = 10
+
+# ── Reaper Engine ───────────────────────────────────────────────────────────
+
+[sandbox.reaper]
+# Grace period (in milliseconds) between SIGTERM and SIGKILL.
+kill_grace_period_ms = 500
+
+# Interval (in seconds) for the reaper to check for zombie processes.
+reap_interval_secs = 5
+
+# Maximum number of processes to reap in a single pass.
+max_reap_batch = 64
+
+# ── Logging ─────────────────────────────────────────────────────────────────
+
+[sandbox.logging]
+# Log sandbox events to syslog.
+use_syslog = true
+
+# Log level: "error", "warn", "info", "debug".
+log_level = "info"
+
+# Log file path for sandbox-specific events.
+log_file = "/var/log/openntx/sandbox.log"

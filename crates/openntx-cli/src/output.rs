@@ -14,3 +14,11 @@ pub fn note(value: &str) {
     println!("Note:");
     println!("{value}");
 }
+
+pub fn success(value: &str) {
+    println!("✓ {value}");
+}
+
+pub fn info(value: &str) {
+    println!("ℹ {value}");
+}

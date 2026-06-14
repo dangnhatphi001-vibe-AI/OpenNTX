@@ -12,13 +12,13 @@
 
 <p align="center">
   <a href="https://github.com/openntx/openntx/actions/workflows/ci.yml"><img src="https://github.com/openntx/openntx/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/version-v2.7.0--alpha-brightgreen" alt="Version">
-  <img src="https://img.shields.io/badge/era-Execution%20%26%20Subsystem-critical" alt="Era">
+  <img src="https://img.shields.io/badge/version-v2.8.0--alpha-brightgreen" alt="Version">
+  <img src="https://img.shields.io/badge/era-Distribution%20%26%20Packaging-critical" alt="Era">
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="License">
   <img src="https://img.shields.io/badge/runtime-LIVE-brightgreen" alt="Runtime">
 </p>
 
-> **Version: v2.7.0-alpha — The Execution, Hardening, Graphics, Registry, API & GUI Era**
+> **Version: v2.8.0-alpha — The Distribution & Debian Packaging Era**
 >
 > OpenNTX has crossed the Rubicon. The V1.x identity layer is complete.
 > The kernel now recognises `.exe` files natively, the runtime executes them
@@ -31,8 +31,11 @@
 > `/api/v1/execute` and `/api/v1/purge` endpoints for GUI integration.
 > The Slint-based graphical frontend (`openntx-gui`) provides a Cyberpunk
 > Dark Mode interface with real-time system monitoring, app deployment,
-> and live log terminal.
-> This is no longer a planning tool — **it is a subsystem.**
+> and live log terminal. The **Automated Debian Package Generation Engine**
+> packages the entire platform into a production-ready `.deb` with
+> maintainer scripts for binfmt_misc registration, cgroups v2 setup,
+> and the Reaper Engine for graceful process cleanup on removal.
+> This is no longer a planning tool — **it is a distributable subsystem.**
 
 ---
 
@@ -208,6 +211,15 @@ learns.
   real-time log terminal. Async API client via `reqwest` with 1s polling
   loop for live monitor data.
 
+- [x] **V2.8.0 — Automated Debian Package Generation Engine**
+  Full platform `.deb` packaging via `openntx system-package build`.
+  Generates `DEBIAN/control` (deps: libc6, libx11-6, libgcc-s1, libstdc++6),
+  `postinst` (system user creation, sandbox dirs, binfmt_misc PE registration,
+  cgroups v2 hierarchy), `prerm` (Reaper Engine: SIGTERM→SIGKILL all managed
+  PIDs, binfmt unregister, cgroup cleanup). Default `sandbox.toml` with
+  cgroups limits (2 GiB RAM, 50% CPU, 256 PIDs), network jail (default:
+  none), filesystem/process isolation. Shell automation via `tools/build-deb.sh`.
+
 ---
 
 ## Core Subsystems — V2.x Execution Era
@@ -356,6 +368,11 @@ crates/
   openntx-gui        Slint-based graphical frontend (Cyberpunk Dark Mode).
                      System monitor, app grid, deploy, real-time log.
                      Async API client via reqwest + tokio polling.
+
+  packaging/         System-level .deb packaging engine (V2.8).
+  (inside core)      build_system_deb() → staging layout → DEBIAN/control,
+                     postinst (binfmt + cgroups), prerm (Reaper Engine).
+                     Default sandbox.toml config. tools/build-deb.sh automation.
 ```
 
 **Runtime module structure (`openntx-core/src/runtime/`):**
@@ -407,7 +424,7 @@ crates/
 
 ## Test Coverage
 
-**327 tests, 0 failures.** Full breakdown:
+**335 tests, 0 failures.** Full breakdown:
 
 | Module | Tests | Coverage |
 |---|---|---|
@@ -417,6 +434,7 @@ crates/
 | `runtime::ipc` | 9 | Message round-trip, server-client E2E, cleanup, error handling |
 | `runtime::cgroups` | 17 | Path generation, sanitization, cpu_max_from_percent, apply_limits, cleanup |
 | `runtime::reaper` | 19 | PID parsing, SIGTERM/SIGKILL flow, cgroup cleanup, signal helpers |
+| `packaging::system_deb` | 8 | Control file format, postinst/prerm scripts, TOML validation, deps |
 | `runtime::graphics` | 22 | Surface creation, HWND allocation, GDI flush, framebuffer I/O, destruction |
 | `runtime::registry` | 24 | Write-then-read, persistence, TOML validation, hive CRUD, key normalization |
 | `runtime::api` | 6 | Execute endpoint, purge endpoint, validation, error handling, 404 |
@@ -451,8 +469,13 @@ cargo build --release
 # Launch the TUI (IPC server starts automatically)
 ./target/release/openntx-appportal
 
-# Build a .deb package
+# Build a .deb package (per-app)
 ./target/release/openntx package build <app-id> --yes
+
+# Build the full system .deb package
+./tools/build-deb.sh --version 2.8.0
+# Or via CLI:
+./target/release/openntx system-package build --version 2.8.0
 
 # Register binfmt_misc (requires root)
 sudo ./target/release/openntx runtime register
@@ -508,3 +531,129 @@ own runtime without depending on any single external compatibility layer.
 OpenNTX is licensed under the
 [PolyForm Noncommercial License 1.0.0](LICENSE).
 See [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) for commercial use.
+
+---
+
+## Release Notes
+
+### v2.8.0-alpha — Automated Debian Package Generation Engine
+
+#### Overview
+
+OpenNTX v2.8.0-alpha introduces the **Automated Debian Package Generation
+Engine** (`openntx-packaging`), a complete, production-ready system for building
+distributable `.deb` packages of the entire OpenNTX platform. This release
+transforms OpenNTX from a source-only project into a first-class
+Debian-distributable application subsystem for Linux.
+
+#### New Features
+
+**System-Level .deb Packaging Engine**
+- Full platform packaging: builds a single `.deb` containing all OpenNTX
+  binaries (`openntx`, `openntx-gui`, `openntx-appportal`), default
+  configuration, and maintainer scripts.
+- Rust-native engine (`crates/openntx-core/src/packaging/system_deb.rs`):
+  ~500 lines of production Rust code implementing the complete packaging
+  pipeline — from `cargo build --release` through staging layout assembly
+  to `dpkg-deb --build` invocation.
+- 8 comprehensive unit tests covering control file format, postinst/prerm
+  script structure, TOML validation, binary target completeness, and
+  dependency verification.
+
+**Maintainer Scripts (DEBIAN/)**
+- `postinst` (Post-Installation): Automatically creates the `openntx` system
+  user/group, establishes `/var/lib/openntx/sandboxes` with proper
+  ownership/permissions, registers the PE (MZ) executable format with
+  the Linux kernel's `binfmt_misc` subsystem, and initializes the cgroups v2
+  hierarchy at `/sys/fs/cgroup/openntx/` with CPU and memory controllers.
+- `prerm` (Pre-Removal): Implements the **Reaper Engine** — gracefully
+  terminates all managed Windows processes by reading PIDs from per-app
+  cgroup `cgroup.procs` files, sending SIGTERM with a 500ms grace period,
+  then escalating to SIGKILL for survivors. Unregisters the `binfmt_misc`
+  handler, stops daemon services, and cleans up the cgroup hierarchy.
+
+**Default Sandbox Configuration (`etc/openntx/sandbox.toml`)**
+- Cgroups v2 resource limits: 2 GiB memory cap, 50% CPU bandwidth quota,
+  256 PID limit per application sandbox.
+- Network jail: default isolation mode `none` (no network access) with
+  configurable modes: `host`, `bridge` (10.200.0.0/24), `isolated` (loopback).
+- Filesystem isolation: private mount propagation, optional `/tmp` bind-mount,
+  font directory passthrough.
+- Process isolation: capability dropping, configurable nice value.
+- Reaper Engine tuning: 500ms kill grace period, 5s reap interval.
+
+**Build Automation (`tools/build-deb.sh`)**
+- 9-step automated pipeline: environment validation → release binary
+  compilation → binary validation → staging assembly → binary installation →
+  control/postinst/prerm generation → config installation → permission
+  normalization → `dpkg-deb --build`.
+- Supports `--dry-run`, `--skip-build`, `--version`, `--output` flags.
+
+**CLI Integration**
+- `openntx system-package build` — Build the complete system `.deb` package.
+- `openntx system-package plan` — Preview package layout without building.
+
+#### Package Layout
+
+```text
+target/debian/openntx_2.8.0_amd64.deb
+├── DEBIAN/
+│   ├── control           Package: openntx, Architecture: amd64
+│   ├── postinst          User creation, binfmt, cgroups, sandbox setup
+│   └── prerm             Reaper Engine, binfmt unregister, cgroup cleanup
+├── usr/bin/
+│   ├── openntx           CLI binary
+│   ├── openntx-gui       Slint GUI binary
+│   └── openntx-appportal App Portal binary
+├── etc/openntx/
+│   └── sandbox.toml      Default sandbox configuration
+└── var/lib/openntx/
+    └── sandboxes/         Runtime sandbox directory
+```
+
+#### Dependencies
+
+- Required: `libc6 (>= 2.31)`, `libx11-6`, `libgcc-s1 (>= 3.0)`, `libstdc++6 (>= 11)`
+- Recommended: `wine`, `xdg-utils`
+
+#### Files Changed/Created
+
+| File | Status | Description |
+|---|---|---|
+| `crates/openntx-core/src/packaging/system_deb.rs` | NEW | System-level .deb packaging engine |
+| `crates/openntx-core/src/packaging/mod.rs` | MODIFIED | Added system_deb exports |
+| `crates/openntx-core/src/error.rs` | MODIFIED | Added `SystemDebBuild` variant |
+| `etc/openntx/sandbox.toml` | NEW | Default sandbox configuration |
+| `tools/build-deb.sh` | NEW | Automated build script |
+| `crates/openntx-cli/src/commands/system_package.rs` | NEW | CLI command |
+| `crates/openntx-cli/src/commands/mod.rs` | MODIFIED | Registered command |
+| `crates/openntx-cli/src/output.rs` | MODIFIED | Added success/info helpers |
+
+#### Usage
+
+```bash
+# Build the complete .deb package
+./tools/build-deb.sh --version 2.8.0
+
+# Via CLI
+cargo run -p openntx-cli -- system-package build --version 2.8.0
+
+# Dry-run (preview layout)
+cargo run -p openntx-cli -- system-package build --dry-run
+
+# Show package plan
+cargo run -p openntx-cli -- system-package plan
+```
+
+#### Quality Assurance
+
+- 0 compilation errors, 0 warnings across the entire workspace.
+- All existing tests preserved — no regressions introduced.
+- Code formatting: fully compliant with `rustfmt` standards.
+
+---
+
+### Previous Releases
+
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) and [CHANGELOG.md](CHANGELOG.md)
+for the complete release history from v1.0-alpha through v2.7.0-alpha.

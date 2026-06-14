@@ -16,6 +16,7 @@ pub mod remove;
 pub mod rename;
 pub mod run;
 pub mod show;
+pub mod system_package;
 
 use clap::Subcommand;
 use openntx_core::Result;
@@ -137,6 +138,11 @@ pub enum Commands {
         #[command(subcommand)]
         command: config_cmd::ConfigCommands,
     },
+    /// Build the complete OpenNTX system .deb package
+    SystemPackage {
+        #[command(subcommand)]
+        command: system_package::SystemPackageCommands,
+    },
     /// Generate shell completions
     Completions {
         #[arg(value_name = "shell")]
@@ -194,6 +200,7 @@ pub fn execute(command: Commands) -> Result<()> {
         } => import_cmd::run(&bundle_path, r#as.as_deref(), yes),
         Commands::Logs { command } => logs_cmd::execute(command),
         Commands::Config { command } => config_cmd::execute(command),
+        Commands::SystemPackage { command } => system_package::execute(command),
         Commands::Completions { shell } => completions::run(&shell),
     }
 }
